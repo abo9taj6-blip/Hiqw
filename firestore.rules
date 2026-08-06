@@ -1,0 +1,173 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == '9botaj7@gmail.com' ||
+        request.auth.uid == 'Z1jjLG1lbnevI5VMscX6VVA6E242' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && (!request.resource.data.keys().contains('isAdmin') || request.resource.data.isAdmin == false);
+      allow update: if (isOwner(userId) && (!request.resource.data.keys().contains('isAdmin') || request.resource.data.isAdmin == resource.data.isAdmin)) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Main directory collections
+    match /doctors/{doctorId} {
+      allow read: if true;
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userLikes', 'updatedAt'])) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /taxis/{taxiId} {
+      allow read: if true;
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userLikes', 'updatedAt'])) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /craftsmen/{craftsmanId} {
+      allow read: if true;
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userLikes', 'updatedAt'])) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /govAnnouncements/{announcementId} {
+      allow read: if true;
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userLikes', 'updatedAt'])) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /restaurants/{restaurantId} {
+      allow read: if true;
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userLikes', 'updatedAt'])) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /serviceOffers/{offerId} {
+      allow read: if true;
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userLikes', 'updatedAt'])) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /hospital_doctors/{doctorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /occasions/{occasionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /blood_donors/{donorId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /gym_subscribers/{subscriberId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /market_stores/{storeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      
+      match /market_products/{productId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+      
+      match /gym_subscribers/{subscriberId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      match /gym_tips/{tipId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      match /gym_subscriptions/{subscriptionId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      match /institute_students/{studentId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      match /institute_courses/{courseId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
+    match /market_listings/{listingId} {
+      allow read: if true;
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userLikes', 'updatedAt'])) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Allow collectionGroup query for market_products
+    match /{path=**}/market_products/{productId} {
+      allow read: if true;
+    }
+
+    // Restaurant Orders
+    match /restaurant_orders/{orderId} {
+      allow create: if true;
+      allow read: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // Connectivity test
+    match /_connection_test_/{docId} {
+      allow read: if true;
+    }
+    match /test/{docId} {
+      allow read: if true;
+    }
+  }
+}

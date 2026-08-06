@@ -1,0 +1,348 @@
+{
+  "entities": {
+    "Doctor": {
+      "title": "Doctor",
+      "description": "Medical professional or facility",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "category": { "type": "string", "enum": ["doctor", "lab", "pharmacy"] },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "phone1": { "type": "string" },
+        "phone2": { "type": "string" },
+        "likes": { "type": "number" },
+        "manualLikes": { "type": "number" },
+        "reviews": { "type": "number" },
+        "isBookingEnabled": { "type": "boolean" },
+        "whatsappBookingNumber": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "location", "phone1"]
+    },
+    "Taxi": {
+      "title": "Taxi",
+      "description": "Taxi driver or transportation service",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "category": { "type": "string", "enum": ["private", "kia", "starx", "heavy"] },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "phone1": { "type": "string" },
+        "phone2": { "type": "string" },
+        "likes": { "type": "number" },
+        "manualLikes": { "type": "number" },
+        "reviews": { "type": "number" }
+      },
+      "required": ["id", "name", "category", "location", "phone1"]
+    },
+    "GasStation": {
+      "title": "GasStation",
+      "description": "Gas Station with Fuel Availability Schedule",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "location": { "type": "string" },
+        "phone1": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "todayHasPetrolNormal": { "type": "boolean" },
+        "todayHasPetrolPremium": { "type": "boolean" },
+        "todayHasDiesel: { "type": "boolean" },
+        "todayHasGas": { "type": "boolean" },
+        "todayNotes": { "type": "string" },
+        "tomorrowHasPetrolNormal": { "type": "boolean" },
+        "tomorrowHasPetrolPremium": { "type": "boolean" },
+        "tomorrowHasDiesel: { "type": "boolean" },
+        "tomorrowHasGas": { "type": "boolean" },
+        "tomorrowNotes": { "type": "string" }
+      },
+      "required": ["id", "name", "location", "phone1", "isActive"]
+    },
+    "Craftsman": {
+      "title": "Craftsman",
+      "description": "Skilled worker or artisan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "phone1": { "type": "string" },
+        "phone2": { "type": "string" },
+        "likes": { "type": "number" },
+        "manualLikes": { "type": "number" },
+        "reviews": { "type": "number" }
+      },
+      "required": ["id", "name", "location", "phone1"]
+    },
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "Dining establishment and its menu",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "menu": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "category": { "type": "string" },
+              "price": { "type": "string" },
+              "image": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["id", "name", "address", "phone", "isActive"]
+    },
+    "Banner": {
+      "title": "Banner",
+      "description": "Promotional banner advertisement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "image": { "type": "string" },
+        "type": { "type": "string", "enum": ["internal", "external", "text"] },
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "buttonText": { "type": "string" },
+        "url": { "type": "string" },
+        "clicks": { "type": "number" }
+      },
+      "required": ["id", "image", "type"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System or news notification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["id", "title", "message", "timestamp"]
+    },
+    "AuditLog": {
+      "title": "Audit Log",
+      "description": "Log of administrative actions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "action", "details", "timestamp"]
+    },
+    "User": {
+      "title": "User",
+      "description": "App user and their permissions",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "displayName": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "AppSettings": {
+      "title": "App Settings",
+      "description": "Global application configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "showPrayerBanner": { "type": "boolean" }
+      },
+      "required": ["id"]
+    },
+    "BloodDonor": {
+      "title": "Blood Donor",
+      "description": "Voluntary blood donor for emergency lookups",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "bloodType": { "type": "string" },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["name", "bloodType", "phone", "location", "isActive", "createdAt"]
+    },
+    "GymSubscriber": {
+      "title": "Gym Subscriber",
+      "description": "Male gym subscriber details, workouts, and duration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "age": { "type": "number" },
+        "weight": { "type": "number" },
+        "height": { "type": "number" },
+        "subscriptionType": { "type": "string", "enum": ["iron", "fitness", "rehab"] },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "phone": { "type": "string" },
+        "assignedExercises": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["code", "name", "age", "subscriptionType", "startDate", "endDate"]
+    },
+    "InstituteCourse": {
+      "title": "Institute Course",
+      "description": "An educational course or subject of an institute",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subject": { "type": "string" },
+        "teacher": { "type": "string" },
+        "price": { "type": "number" },
+        "grade": { "type": "string" },
+        "days": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["subject", "teacher", "price", "grade"]
+    },
+    "InstituteStudent": {
+      "title": "Institute Student",
+      "description": "A subscribed student of an educational institute",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "grade": { "type": "string" },
+        "courses": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "phone": { "type": "string" }
+      },
+      "required": ["name", "code", "grade", "startDate", "endDate"]
+    },
+    "GymTip": {
+      "title": "Gym Tip",
+      "description": "A nutritional, training or general advice tip for gym subscribers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "text": { "type": "string" }
+      },
+      "required": ["type", "text"]
+    },
+    "Heritage": {
+      "title": "Heritage Item",
+      "description": "Historical landmarks and cultural heritage sites of Shirqat",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "name": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "image": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["title", "subtitle", "category", "description"]
+    },
+    "GymSubscription": {
+      "title": "Gym Subscription Option",
+      "description": "Available gym subscription plans and active pricing offers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "price": { "type": "string" },
+        "details": { "type": "string" },
+        "target": { "type": "string", "enum": ["all", "subscribers", "non_subscribers"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["title", "price", "target"]
+    },
+    "HospitalDoctor": {
+      "title": "Hospital Doctor",
+      "description": "Hospital doctor schedule and details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "specialty": { "type": "string" },
+        "shift": { "type": "string" },
+        "days": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "name", "specialty", "shift", "days", "isActive"]
+    },
+    "MarketListing": {
+      "title": "Market Listing",
+      "description": "Market item listing (Cars, Real estate, Phones, etc)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "tag": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "showInHome": { "type": "boolean" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "title", "tag"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles and roles" },
+    "/market_listings/{listingId}": { "schema": "MarketListing", "description": "Classifieds and market listings" },
+    "/heritage/{heritageId}": { "schema": "Heritage", "description": "Shirqat historical and cultural heritage elements" },
+    "/doctors/{doctorId}": { "schema": "Doctor", "description": "Medical professionals" },
+    "/taxis/{taxiId}": { "schema": "Taxi", "description": "Taxi services" },
+    "/gas_stations/{gasStationId}": { "schema": "GasStation", "description": "Gas stations and fuel availability schedule" },
+    "/craftsmen/{craftsmanId}": { "schema": "Craftsman", "description": "Crafts and manual labor" },
+    "/restaurants/{restaurantId}": { "schema": "Restaurant", "description": "Restaurants and menus" },
+    "/banners/{bannerId}": { "schema": "Banner", "description": "Promotion banners" },
+    "/notifications/{notificationId}": { "schema": "Notification", "description": "App notifications" },
+    "/settings/{settingId}": { "schema": "AppSettings", "description": "Global app settings" },
+    "/audit_logs/{logId}": { "schema": "AuditLog", "description": "Admin activity logs" },
+    "/blood_donors/{donorId}": { "schema": "BloodDonor", "description": "Voluntary blood donors list" },
+    "/hospital_doctors/{doctorId}": { "schema": "HospitalDoctor", "description": "Hospital doctors schedules and shifts" },
+    "/gym_subscribers/{subscriberId}": { "schema": "GymSubscriber", "description": "Gym subscriber accounts and workout programs" },
+    "/market_stores/{storeId}/gym_tips/{tipId}": { "schema": "GymTip", "description": "Gym tips and nutritional articles" },
+    "/market_stores/{storeId}/gym_subscriptions/{subscriptionId}": { "schema": "GymSubscription", "description": "Gym subscription options and packages" },
+    "/market_stores/{storeId}/institute_courses/{courseId}": { "schema": "InstituteCourse", "description": "Courses offered by matching educational institutes" },
+    "/market_stores/{storeId}/institute_students/{studentId}": { "schema": "InstituteStudent", "description": "Registered students of matching educational institutes" }
+  }
+}

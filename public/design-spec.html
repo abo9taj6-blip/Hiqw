@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دليل الشرقاط - دليل مواصفات التصميم | Design Specification</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for Arabic (Cairo & Tajawal) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Cairo', 'Tajawal', 'sans-serif'],
+            display: ['Tajawal', 'Cairo', 'sans-serif'],
+          },
+          colors: {
+            emerald: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            },
+            slate: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Cairo', 'Tajawal', sans-serif;
+    }
+    /* Simple glass effect for spec sheets */
+    .glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+    }
+    .dark .glass {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 min-h-screen">
+
+  <!-- Top Decorative Header -->
+  <header class="border-b border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 sticky top-0 z-50 transition-colors shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h3a1 1 0 011 1v6a1 1 0 01-1 1h-3a1 1 0 01-1-1v-6z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="font-display font-extrabold text-lg text-slate-900 dark:text-white leading-tight">دليل ومواصفات تصميم تطبيق الشرقاط</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">ملف مواصفات تفاعلي موجه لمشاركة التصميم مع Google Stitch</p>
+        </div>
+      </div>
+      
+      <!-- Interactive Dark Mode Control & Download Trigger -->
+      <div class="flex items-center gap-3">
+        <button onclick="toggleDarkMode()" class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2 text-slate-700 dark:text-slate-300">
+          <span class="dark:hidden">🌙 نمط دافئ (داكن)</span>
+          <span class="hidden dark:inline">☀️ نمط ناصع (فاتح)</span>
+        </button>
+        <button onclick="window.print()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-500/10 transition-all flex items-center gap-2">
+          💾 حفظ كـ PDF / طباعة
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-12">
+    
+    <!-- Introduction Panel -->
+    <section class="bg-gradient-to-br from-emerald-50 to-white dark:from-slate-800/40 dark:to-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-xs">
+      <div class="absolute -right-16 -bottom-16 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl"></div>
+      <div class="max-w-3xl space-y-4">
+        <span class="px-3 py-1 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 rounded-full text-[10px] font-black uppercase tracking-wider">نظرة عامة على التطبيق</span>
+        <h2 class="font-display font-black text-2xl sm:text-3xl text-slate-900 dark:text-white">دليل الشرقاط الذكي والحديث</h2>
+        <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+          تم تصميم هذا الدليل لخدمة مجتمع مدينة الشرقاط، ليوفر دليلاً رقمياً شاملاً للأطباء، أصحاب سيارات الأجرة، الحرفيين، بالإضافة إلى أحدث عروض الخصومات وسوق متكامل لعرض السلع والسيارات والعقارات. يتميز التصميم بالبساطة العالية وسهولة التصفح مع التركيز على الاستخدام المحمول وتجربة المستخدم السريعة.
+        </p>
+      </div>
+    </section>
+
+    <!-- Colors & Typography Grid -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      <!-- Color Palette -->
+      <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-6">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-6 bg-emerald-500 rounded-full"></div>
+          <h3 class="font-display font-extrabold text-base text-slate-900 dark:text-white">نظام الألوان والباليت المعتمد</h3>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">نظام ألوان مريح للعين يدعم تباين عالي للألوان لضمان وضوح النصوص في النمطين الفاتح والداكن.</p>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <!-- Emerald Color -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500 shadow-sm mb-2.5"></div>
+            <span class="text-xs font-bold block text-slate-800 dark:text-white">اللون الأساسي</span>
+            <span class="text-[10px] text-emerald-600 font-mono">#10B981 (Emerald 500)</span>
+          </div>
+          <!-- Dark Slate Color -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-xl bg-slate-800 shadow-sm mb-2.5"></div>
+            <span class="text-xs font-bold block text-slate-800 dark:text-white">الخلفيات الداكنة</span>
+            <span class="text-[10px] text-slate-600 font-mono">#1E293B (Slate 800)</span>
+          </div>
+          <!-- Pure White / Light Slate -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-sm mb-2.5"></div>
+            <span class="text-xs font-bold block text-slate-800 dark:text-white">الخلفيات الفاتحة</span>
+            <span class="text-[10px] text-slate-400 font-mono">#F8FAFC (Slate 50)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typography -->
+      <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-6">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-6 bg-emerald-500 rounded-full"></div>
+          <h3 class="font-display font-extrabold text-base text-slate-900 dark:text-white">نظام التيبوجرافي والخطوط</h3>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">عائلة خطوط هندسية واضحة ومقروءة على الشاشات الصغيرة لتسهيل قراءة أسعار وتفاصيل البطاقات.</p>
+        
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 pb-3">
+            <div>
+              <span class="text-xs text-slate-400">العناوين الرئيسية والبطاقات</span>
+              <p class="text-base font-black font-display text-slate-900 dark:text-white">خط تجوال (Tajawal)</p>
+            </div>
+            <span class="text-xs bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-md font-mono">font-display</span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs text-slate-400">نصوص الواجهات والفقرات</span>
+              <p class="text-base font-bold font-sans text-slate-900 dark:text-white">خط كيرو (Cairo)</p>
+            </div>
+            <span class="text-xs bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-md font-mono">font-sans</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- UI Component Specs Showcase (The Core Cards requested by the user) -->
+    <section class="space-y-6">
+      <div class="flex items-center gap-2.5">
+        <div class="w-2.5 h-6 bg-emerald-500 rounded-full"></div>
+        <h3 class="font-display font-extrabold text-lg text-slate-900 dark:text-white">هيكل ومواصفات البطاقات الرئيسية</h3>
+      </div>
+      <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+        قمنا بتصغير الخطوط وتحسين التباعد الداخلي في بطاقات الصفحة الرئيسية بناءً على طلبك، لتوفر مظهراً مدمجاً ومقروءاً على الهواتف والأجهزة المختلفة.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Spec 1: Directory Card -->
+        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 flex flex-col justify-between shadow-xs relative">
+          <div>
+            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full uppercase">1. بطاقة شريط الدليل (دليل الشرقاط)</span>
+            <div class="my-5 flex justify-center">
+              <!-- Live Card Render -->
+              <div class="w-[115px] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-2 flex flex-col items-center justify-between shadow-xs">
+                <span class="text-[7px] font-bold px-1 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 self-end">
+                  أطباء
+                </span>
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mt-2 mb-1">
+                  <!-- Stethoscope Icon Mock -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <h4 class="font-display font-bold text-[9px] sm:text-[10px] text-slate-800 dark:text-white line-clamp-2 text-center w-full leading-tight my-auto">
+                  د. محمد جاسم العبيدي
+                </h4>
+              </div>
+            </div>
+          </div>
+          
+          <div class="border-t border-slate-100 dark:border-slate-700/50 pt-3 space-y-1.5 text-xs">
+            <div class="flex justify-between"><span class="text-slate-400">العرض:</span> <span class="font-mono">115px (desktop) / 105px (mobile)</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">حجم الخط:</span> <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">9px (mobile) / 10px (sm)</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">نصف القطر:</span> <span class="font-mono">rounded-xl (12px)</span></div>
+          </div>
+        </div>
+
+        <!-- Spec 2: Offers Card -->
+        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 flex flex-col justify-between shadow-xs relative">
+          <div>
+            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full uppercase">2. بطاقة شريط العروض (بدون تصنيفات)</span>
+            <div class="my-5 flex justify-center">
+              <!-- Live Card Render -->
+              <div class="w-[145px] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-2 flex flex-col justify-between shadow-xs text-right">
+                <div class="w-full h-24 bg-emerald-500/5 rounded-xl overflow-hidden flex items-center justify-center mb-1.5 relative">
+                  <!-- Tag Icon Mock -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span class="absolute top-1 right-1 bg-rose-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                    خصم 15%
+                  </span>
+                </div>
+                <h4 class="font-display font-bold text-[10px] sm:text-xs text-slate-800 dark:text-white line-clamp-1 leading-snug">
+                  وجبة عائلية فاخرة
+                </h4>
+                <p class="text-[8px] sm:text-[9px] font-medium text-slate-400 dark:text-slate-500 line-clamp-1 mt-0.5">
+                  مطعم باب الحارة - الشرقاط
+                </p>
+                <div class="mt-1.5 pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
+                    12,000 د.ع
+                  </span>
+                  <span class="text-[8px] font-medium text-slate-400">التفاصيل ←</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="border-t border-slate-100 dark:border-slate-700/50 pt-3 space-y-1.5 text-xs">
+            <div class="flex justify-between"><span class="text-slate-400">العرض:</span> <span class="font-mono">160px (desktop) / 145px (mobile)</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">حجم الخط:</span> <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">10px (mobile) / 12px (sm)</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">حالة التصنيف:</span> <span class="font-semibold text-rose-500">مخفية بالكامل من الواجهة الرئيسية 🚫</span></div>
+          </div>
+        </div>
+
+        <!-- Spec 3: Market Card -->
+        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 flex flex-col justify-between shadow-xs relative">
+          <div>
+            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full uppercase">3. بطاقة شريط السوق (سوق الشرقاط)</span>
+            <div class="my-5 flex justify-center">
+              <!-- Live Card Render -->
+              <div class="w-[145px] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-2 flex flex-col justify-between shadow-xs text-right">
+                <div class="w-full h-24 bg-emerald-500/5 rounded-xl overflow-hidden flex items-center justify-center mb-1.5 relative">
+                  <!-- Shopping Bag Icon Mock -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                  <span class="absolute top-1 left-1 bg-emerald-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                    نشط
+                  </span>
+                </div>
+                <h4 class="font-display font-bold text-[10px] sm:text-xs text-slate-800 dark:text-white line-clamp-1 leading-snug">
+                  تويوتا كورولا 2022
+                </h4>
+                <div class="mt-1.5 pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
+                    16,500 $
+                  </span>
+                  <span class="text-[8px] font-medium text-slate-400">المعاينة ←</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="border-t border-slate-100 dark:border-slate-700/50 pt-3 space-y-1.5 text-xs">
+            <div class="flex justify-between"><span class="text-slate-400">العرض:</span> <span class="font-mono">160px (desktop) / 145px (mobile)</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">حجم الخط:</span> <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">10px (mobile) / 12px (sm)</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">حالة التصنيف:</span> <span class="font-semibold text-rose-500">مخفية بالكامل من الواجهة الرئيسية 🚫</span></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Sidebar Layout Spec (70% Mobile, 320px Desktop) -->
+    <section class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-6 bg-emerald-500 rounded-full"></div>
+          <h3 class="font-display font-extrabold text-lg text-slate-900 dark:text-white">أبعاد وهندسة القائمة الجانبية (Sidebar)</h3>
+        </div>
+        <span class="px-2.5 py-1 text-xs font-black text-white bg-amber-500 rounded-lg">قائمة منزلقة مخصصة</span>
+      </div>
+      
+      <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+        بناءً على طلبك، قمنا بتحويل زر الضبط والإعدادات في التبويب العلوي ليعمل بمثابة <strong>زر قائمة جانبية (Menu Icon)</strong>، وتم تخصيص عرض القائمة الجانبية لتأخذ جزءاً متوازناً من الشاشة ولا تغطيها بالكامل.
+      </p>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <!-- Interactive Sidebar Simulation Map -->
+        <div class="border border-slate-200 dark:border-slate-700 rounded-2xl p-4 bg-slate-100 dark:bg-slate-900/60 relative overflow-hidden min-h-[300px]">
+          <span class="text-[10px] font-bold text-slate-400 block mb-3">محاكي الهواتف المحمولة (Mobile Sidebar Simulator)</span>
+          
+          <div class="w-full h-56 border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-lg relative overflow-hidden flex items-center justify-end">
+            <!-- Simulated Main App Screen Content -->
+            <div class="absolute inset-0 p-3 opacity-30 select-none text-[8px] space-y-2">
+              <div class="h-4 bg-emerald-500/20 rounded-md"></div>
+              <div class="h-10 bg-slate-200 rounded-md"></div>
+              <div class="grid grid-cols-3 gap-1">
+                <div class="h-12 bg-slate-100 rounded-md"></div>
+                <div class="h-12 bg-slate-100 rounded-md"></div>
+                <div class="h-12 bg-slate-100 rounded-md"></div>
+              </div>
+            </div>
+            
+            <!-- Sidebar Drawer Layer -->
+            <div class="w-[70%] h-full bg-slate-50 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 p-3 relative z-10 flex flex-col justify-between shadow-2xl transition-all">
+              <div>
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2 mb-3">
+                  <span class="text-[10px] font-black text-slate-900 dark:text-white">القائمة الجانبية</span>
+                  <span class="text-[8px] bg-red-100 text-red-600 px-1 py-0.5 rounded cursor-pointer">إغلاق ×</span>
+                </div>
+                <ul class="space-y-2 text-[9px] text-slate-600 dark:text-slate-300">
+                  <li class="p-1.5 bg-emerald-500/5 text-emerald-600 rounded">الصفحة الرئيسية</li>
+                  <li class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">إضافة إعلان جديد</li>
+                  <li class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">تغيير المظهر</li>
+                </ul>
+              </div>
+              <div class="text-[7px] text-slate-400 text-center border-t border-slate-100 dark:border-slate-800 pt-2">
+                دليل الشرقاط v2.0
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dimensions Specs Sheet -->
+        <div class="space-y-4">
+          <h4 class="font-display font-bold text-sm text-slate-900 dark:text-white">جدول الأبعاد المعتمدة برمجياً</h4>
+          <div class="space-y-2.5">
+            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+              <span class="text-xs text-slate-500">العرض على الهواتف (Mobile)</span>
+              <span class="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">w-[70%] (70% من الشاشة)</span>
+            </div>
+            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+              <span class="text-xs text-slate-500">العرض على الحاسوب (Desktop)</span>
+              <span class="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">sm:w-[320px] (ثابت 320 بكسل)</span>
+            </div>
+            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+              <span class="text-xs text-slate-500">محاذاة القائمة (Position)</span>
+              <span class="text-xs font-bold text-slate-800 dark:text-white">الجهة اليمنى (right-0)</span>
+            </div>
+            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+              <span class="text-xs text-slate-500">فئة الأيقونة (Trigger Icon)</span>
+              <span class="text-xs font-mono text-slate-800 dark:text-white">&lt;Menu size={20} /&gt;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 py-6 mt-12 text-center transition-colors">
+    <p class="text-xs text-slate-500 dark:text-slate-400">تم توليد هذا المستند التفاعلي لتطبيق دليل الشرقاط لمشاركته مباشرة مع Google Stitch.</p>
+  </footer>
+
+  <script>
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+    }
+  </script>
+</body>
+</html>

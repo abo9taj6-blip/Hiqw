@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Almarai:wght@300;400;700;800&display=swap');
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme {
+  --font-sans: "Almarai", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cairo", ui-sans-serif, system-ui, sans-serif;
+
+  --color-shirqat-primary: var(--shirqat-primary);
+  --color-shirqat-primary-dark: #047857;
+  --color-shirqat-primary-light: #ecfdf5;
+  --color-shirqat-secondary: #64748b;
+  --color-shirqat-accent: #059669;
+  --color-shirqat-bg: var(--shirqat-bg);
+  --color-shirqat-card: var(--shirqat-card);
+  --color-shirqat-text: var(--shirqat-text);
+  --color-shirqat-text-muted: var(--shirqat-text-muted);
+  --color-shirqat-border: var(--shirqat-border);
+  
+  --color-medical-blue: #0284c7;
+  --color-offer-orange: #ea580c;
+  --color-market-purple: #7c3aed;
+
+  --radius-custom-1: 1.2rem;
+  --radius-custom-2: 2rem;
+  --radius-custom-3: 2.5rem;
+  --radius-custom-4: 3rem;
+}
+
+@layer base {
+  :root {
+    --shirqat-primary: #10b981;
+    --shirqat-bg: #f8fafc;
+    --shirqat-card: #ffffff;
+    --shirqat-text: #0f172a;
+    --shirqat-text-muted: #64748b;
+    --shirqat-border: #e2e8f0;
+  }
+
+  * {
+    @apply border-shirqat-border;
+  }
+
+  body {
+    @apply bg-shirqat-bg text-shirqat-text font-sans antialiased selection:bg-emerald-500/20 selection:text-emerald-700;
+    direction: rtl;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+}
+
+@keyframes slide {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: slide 15s linear infinite;
+}
