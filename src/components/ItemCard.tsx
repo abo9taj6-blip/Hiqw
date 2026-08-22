@@ -104,7 +104,7 @@ export const ItemCard = React.memo(({ item, icon, color, onClick, createdAt, isG
     {isNew && (
       <div className="absolute top-2 right-2 z-20 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse">جديد</div>
     )}
-    <div className={`w-16 h-16 shrink-0 rounded-2xl overflow-hidden flex items-center justify-center border relative ${
+    <div className={`w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-2xl overflow-hidden flex items-center justify-center border relative ${
       color==='blue'?'bg-cyan-50 dark:bg-cyan-950/30 text-cyan-600 border-cyan-100 dark:border-cyan-900/40':
       color==='amber'?'bg-teal-50 dark:bg-teal-950/30 text-teal-600 border-teal-100 dark:border-teal-900/40':
       color==='emerald'?'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 border-emerald-100 dark:border-emerald-900/40':

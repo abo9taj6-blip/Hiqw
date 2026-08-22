@@ -1,5 +1,5 @@
 import React from "react";
-import { MarketProduct } from "../../types";
+import { MarketProduct, formatPriceDisplay } from "../../types";
 import { Utensils } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -48,7 +48,7 @@ export default function ProductCard({
             <p className="text-[10px] text-slate-450 dark:text-slate-500 line-clamp-1 font-bold">{product.description}</p>
           )}
           <div className="text-xs font-black text-emerald-500">
-            {product.price > 0 ? `${product.price.toLocaleString()} د.ع` : "مجاني"}
+            {formatPriceDisplay(product.price)}
           </div>
         </div>
       </div>

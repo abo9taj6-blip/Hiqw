@@ -250,9 +250,9 @@ export const firebaseService = {
   incrementDocumentField: async (collectionPath: string, id: string, field: string, amount: number) => {
     try {
       const docRef = doc(db, collectionPath, id);
-      await updateDoc(docRef, { [field]: increment(amount), updatedAt: serverTimestamp() });
+      await setDoc(docRef, { [field]: increment(amount), updatedAt: serverTimestamp() }, { merge: true });
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `${collectionPath}/${id}`);
+      console.warn(`Failed to increment field ${field} in ${collectionPath}/${id}:`, error);
     }
   },
 

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag, Utensils } from "lucide-react";
-import { MarketProduct, MarketStore } from "../../types";
+import React from "react";
+import { motion } from "framer-motion";
+import { X, Utensils, Phone } from "lucide-react";
+import { MarketProduct, MarketStore, formatPriceDisplay } from "../../types";
 
 interface Props {
   product: MarketProduct;
@@ -12,13 +12,6 @@ interface Props {
 }
 
 export default function ProductModal({ product, store, onClose }: Props) {
-  // Check if added to cart (managed in StoreDetailPage actually, so here we might just display details)
-  // Actually, wait, StoreDetailPage handles cart! Did ProductModal have an Add to Cart button?
-  // Let's just create a nice modal to view details and call it a day, users can add to cart from the StoreDetailPage.
-  // Oh wait, in StoreDetailPage, it probably adds to cart directly or from the modal. I will look at StoreDetailPage lines 875-900.
-  // I will just make the modal a big view of the image and close button, and a button to add to cart.
-  // Wait, I can just not use ProductModal inside StoreDetailPage and use a direct render if I want, or just stick with this simple one.
-
   return (
     <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4">
       <motion.div
@@ -38,14 +31,14 @@ export default function ProductModal({ product, store, onClose }: Props) {
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center z-20 backdrop-blur-md"
+          className="absolute top-4 right-4 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center z-20 backdrop-blur-md cursor-pointer"
         >
           <X size={16} />
         </button>
 
         <div className="w-full h-48 bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative">
           {product.images?.[0] ? (
-            <img src={product.images[0]} className="w-full h-full object-cover" alt="" />
+            <img src={product.images[0]} className="w-full h-full object-cover" alt={product.name} />
           ) : (
              <Utensils size={40} className="text-slate-300" />
           )}
@@ -56,18 +49,23 @@ export default function ProductModal({ product, store, onClose }: Props) {
             <h3 className="text-lg font-black text-slate-800 dark:text-white">{product.name}</h3>
           </div>
           
-          <div className="text-emerald-500 font-bold mb-4">{product.price.toLocaleString()} د.ع</div>
+          <div className="text-emerald-500 font-bold mb-4">{formatPriceDisplay(product.price)}</div>
 
           {product.description && (
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
               {product.description}
             </p>
           )}
-          
-          <div className="bg-orange-50 dark:bg-slate-800 p-3 rounded-xl border border-orange-100 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 text-center flex items-center justify-center gap-1.5">
-             <ShoppingBag size={14} className="text-orange-500" />
-             أضف هذا المنتج للسلة من القائمة
-          </div>
+
+          {store.phone && (
+            <a
+              href={`tel:${store.phone}`}
+              className="mt-2 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs py-3 px-4 rounded-xl shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+            >
+              <Phone size={14} />
+              <span>اتصال للطلب والاستفسار</span>
+            </a>
+          )}
         </div>
       </motion.div>
     </div>

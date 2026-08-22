@@ -9,6 +9,8 @@ import React, {
 import {
   Zap,
   PlusCircle,
+  PackageCheck,
+  Package,
   Phone,
   MessageCircle,
   WifiOff,
@@ -26,6 +28,8 @@ import {
   Instagram,
   ChevronRight,
   ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   ArrowRight,
   Stethoscope,
   Car,
@@ -97,27 +101,9 @@ import { DetailPage, SectionHeader, DetailRow } from "./components/DetailPage";
 import { OverlayPage } from "./components/OverlayPage";
 import { ItemCard } from "./components/ItemCard";
 import { SearchBar } from "./components/SearchBar";
-import MapPicker from "./components/MapPicker";
 import StoreDetailPage from "./components/market/StoreDetailPage";
 import EventPostCard from "./components/EventPostCard";
-
-const AdminPanel = lazy(() =>
-  import("./components/AdminPanel").then((m) => ({ default: m.AdminPanel })),
-);
-
-const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Earth's radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+import { AdminPanel } from "./components/AdminPanel";
 
 const CountdownTimer = ({
   eventDate,
@@ -196,15 +182,15 @@ const CountdownTimer = ({
 // Constants & Types
 import {
   Doctor,
+  DoctorSpecialty,
+  ServiceCategory,
   GovAnnouncement,
   BannerAd,
   HospitalDoctor,
   MarketStore,
   MarketProduct,
-  MarketListing,
   ServiceOffer,
   TaxiDriver,
-  Craftsman,
   Notification,
 } from "./types";
 import { firebaseService } from "./services/firebaseService";
@@ -217,7 +203,7 @@ import {
   User as FirebaseUser,
 } from "firebase/auth";
 
-export const DetailsCarousel = ({ images, title }: { images: string[]; title: string }) => {
+export const DetailsCarousel = ({ images, title, heightClass = "h-64", marginClass = "my-0" }: { images: string[]; title: string; heightClass?: string; marginClass?: string }) => {
   const [index, setIndex] = useState(0);
 
   const validImages = useMemo(() => {
@@ -234,14 +220,14 @@ export const DetailsCarousel = ({ images, title }: { images: string[]; title: st
 
   if (validImages.length === 0) {
     return (
-      <div className="relative h-64 rounded-3xl bg-slate-100 dark:bg-slate-900 mt-2 mb-6 flex items-center justify-center text-slate-400">
+      <div className={`relative ${heightClass} ${marginClass} rounded-3xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400`}>
         <span>لا توجد صور متوفرة</span>
       </div>
     );
   }
 
   return (
-    <div className="relative h-64 rounded-3xl overflow-hidden mt-2 mb-6 shadow-md border border-slate-100/85 dark:border-slate-800 shrink-0">
+    <div className={`relative ${heightClass} ${marginClass} rounded-2xl overflow-hidden shadow-xs border border-slate-100/85 dark:border-slate-800 shrink-0`}>
       <AnimatePresence mode="popLayout">
         <motion.img 
           key={index}
@@ -339,103 +325,6 @@ export const DashboardCard = ({
     </motion.button>
   );
 };
-
-const defaultMarketListings: MarketListing[] = [
-  {
-    id: "listing-car-1",
-    title: "تويوتا كورولا 2022 وارد خليجي",
-    category: "سيارات",
-    price: "$ 16,500",
-    phone: "07700000001",
-    whatsappNumber: "07700000001",
-    location: "الشرقاط - الساحل الأيمن",
-    description: "تويوتا كورولا موديل 2022، محرك 2000، كير اوتوماتيك، شاشة، كاميرا، بصمة، تبريد قطعتين، وارد خليجي، ماشية 35 ألف كم. مكان المعاينة الشرقاط.",
-    images: [
-      "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80"
-    ],
-    isActive: true,
-    createdAt: Date.now() - 10000,
-  },
-  {
-    id: "listing-real-1",
-    title: "منزل للبيع مساحة 200 متر طابقين",
-    category: "عقارات",
-    price: "85,000,000 د.ع",
-    phone: "07700000002",
-    whatsappNumber: "07700000002",
-    location: "الشرقاط - الحي العصري",
-    description: "منزل حديث للبيع في الشرقاط - الحي العصري، طابقين، يحتوي على 4 غرف نوم، هول واسع، مطبخ مجهز، كراج سيارة، حديقة صغيرة. سند طابو صرف.",
-    images: [
-      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=80"
-    ],
-    isActive: true,
-    createdAt: Date.now() - 20000,
-  },
-  {
-    id: "listing-mobile-1",
-    title: "آيفون 15 برو ماكس 256 جيجا",
-    category: "موبايلات",
-    price: "$ 1,150",
-    phone: "07700000003",
-    whatsappNumber: "07700000003",
-    location: "الشرقاط - شارع الأطباء",
-    description: "آيفون 15 Pro Max ذاكرة 256GB، اللون تيتانيوم طبيعي، نسبة البطارية 98%، كامل الملحقات مع الكرتونة والشاحن الأصلي، بدون أي خدش.",
-    images: [
-      "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80"
-    ],
-    isActive: true,
-    createdAt: Date.now() - 30000,
-  },
-  {
-    id: "listing-car-2",
-    title: "هيونداي النترا 2021 أبيض",
-    category: "سيارات",
-    price: "$ 14,200",
-    phone: "07700000004",
-    whatsappNumber: "07700000004",
-    location: "الشرقاط - حي الشهداء",
-    description: "هيونداي النترا موديل 2021، لون أبيض، بصمة، شاشة أندرويد، كشافات، حساسات خلفية، تبريد ممتاز، السيارة جاهزة للتحويل.",
-    images: [
-      "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&auto=format&fit=crop&q=80"
-    ],
-    isActive: true,
-    createdAt: Date.now() - 40000,
-  },
-  {
-    id: "listing-real-2",
-    title: "قطعة أرض سكنية 300 متر واجهة 12م",
-    category: "عقارات",
-    price: "32,000,000 د.ع",
-    phone: "07800000005",
-    whatsappNumber: "07800000005",
-    location: "الشرقاط - قرب المستشفى العام",
-    description: "قطعة أرض سكنية ممتازة واجهة 12 متر وعمق 25 متر، تقع على الشارع العام، جميع الخدمات متوفرة (ماء، كهرباء، تبليط).",
-    images: [
-      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=80"
-    ],
-    isActive: true,
-    createdAt: Date.now() - 50000,
-  },
-  {
-    id: "listing-mobile-2",
-    title: "سامسونج S23 ألترا 512 جيجا أسود",
-    category: "موبايلات",
-    price: "$ 880",
-    phone: "07710000006",
-    whatsappNumber: "07710000006",
-    location: "الشرقاط - السوق الرئيسي",
-    description: "Samsung Galaxy S23 Ultra ذاكرة 512GB، رام 12GB، أسود ملكي، نظيف جداً زيرو مع القلم والشاحن الأصلي.",
-    images: [
-      "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&auto=format&fit=crop&q=80"
-    ],
-    isActive: true,
-    createdAt: Date.now() - 60000,
-  }
-];
 
 const defaultServiceOffers: ServiceOffer[] = [
   {
@@ -649,59 +538,6 @@ const defaultTaxis: TaxiDriver[] = [
   },
 ];
 
-const defaultCraftsmen: Craftsman[] = [
-  {
-    id: "craftsman-1",
-    name: "أبو علي الكهربائي",
-    craft: "كهربائي منازل وتأسيس",
-    phone: "07700000001",
-    location: "الشرقاط - المركز",
-    notes: "تأسيس وصيانة كافة المجمعات السكنية والمنازل والأجهزة الكهربائية.",
-    category: "الكل",
-    createdAt: Date.now() - 10000,
-  },
-  {
-    id: "craftsman-2",
-    name: "الأسطة سعدون السباك",
-    craft: "سباك وصيانة مجاري ومياه",
-    phone: "07700000002",
-    location: "الشرقاط - الساحل الأيمن",
-    notes: "صيانة وتأسيس شبكات المياه والمجاري وتصفية الخزانات بأحدث الأجهزة.",
-    category: "الكل",
-    createdAt: Date.now() - 20000,
-  },
-  {
-    id: "craftsman-3",
-    name: "عمر فني التبريد",
-    craft: "فني تبريد وتكييف (سبالت)",
-    phone: "07700000003",
-    location: "الشرقاط - الساحل الأيسر",
-    notes: "تنظيف وغسل وشحن غاز السبالت والمكيفات وإصلاح الأعطال الميكانيكية.",
-    category: "الكل",
-    createdAt: Date.now() - 30000,
-  },
-  {
-    id: "craftsman-4",
-    name: "الأسطة أبو فهد الحداد",
-    craft: "حداد أبواب ومظلات وخزانات",
-    phone: "07700000004",
-    location: "الشرقاط - حي العسكري",
-    notes: "تصميم وتنفيذ كافة أنواع الأبواب والمظلات والشبابيك وسقائف السندويش بنل.",
-    category: "الكل",
-    createdAt: Date.now() - 40000,
-  },
-  {
-    id: "craftsman-5",
-    name: "أحمد النجار",
-    craft: "نجار وديكورات وغرف نوم",
-    phone: "07700000005",
-    location: "الشرقاط - الشارع العام",
-    notes: "شد وتفكيك غرف النوم وتعديل الأبواب وتركيب الديكورات الخشبية.",
-    category: "الكل",
-    createdAt: Date.now() - 50000,
-  },
-];
-
 const onboardingSlides = [
   {
     title: "الدليل الشامل لأهالي قضاء الشرقاط",
@@ -712,38 +548,42 @@ const onboardingSlides = [
   },
   {
     title: "تسهيل البحث عن الأطباء والتاكسي",
-    description: "اعثر على أطباء القضاء بمختلف الاختصاصات، واطلع على العيادات المفتوحة واحجز موعدك، أو تواصل مع كابتن تاكسي متوفر لتصل بأمان.",
+    description: "اعثر على أطباء القضاء بمختلف الاختصاصات، واطلع على العيادات المفتوحة وأوقات عملها، أو تواصل مع كابتن تاكسي متوفر لتصل بأمان.",
     image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800",
     badge: "خدمات طبية ونقل فوري",
     icon: "🩺",
   },
   {
-    title: "أفضل العروض والمطاعم المحلية",
-    description: "استكشف قائمة Menu لأشهر المطاعم في الشرقاط واطلب وجبتك المفضلة، وتابع أقوى العروض والخصومات الحصرية في المحلات والأسواق.",
+    title: "أفضل المحلات والعروض في السوق",
+    description: "استكشف محلات ومطاعم ومكاتب الشرقاط وتابع أقوى العروض والمعروضات بسهولة.",
     image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=800",
-    badge: "المطاعم والعروض اليومية",
-    icon: "🍕",
+    badge: "السوق والعروض اليومية",
+    icon: "🛍️",
   },
 ];
 
 // Helper for store categories classification
-const getStoreClassification = (store: any): "محل" | "مطعم" | "مكتب" => {
+const getStoreClassification = (store: any): "مطاعم" | "متاجر" | "مكاتب" => {
   const name = (store.name || "").toLowerCase();
   const desc = (store.description || "").toLowerCase();
   const cat = (store.category || "").toLowerCase();
   const text = `${name} ${desc} ${cat}`;
 
+  if (cat === "مطاعم" || cat === "مطعم") return "مطاعم";
+  if (cat === "متاجر" || cat === "متجر" || cat === "محل" || cat === "أسواق") return "متاجر";
+  if (cat === "مكاتب" || cat === "مكتب") return "مكاتب";
+
   const foodKeywords = ["مطعم", "كافتريا", "مرطبات", "منزلي", "مأكولات", "مطاعم", "حلويات", "مطبخ", "مخبز", "أكل", "عصائر", "مشويات", "بيتزا", "كافيه", "شاورما", "فطائر", "وجبات"];
   if (store.isRestaurant || foodKeywords.some(kw => text.includes(kw))) {
-    return "مطعم";
+    return "مطاعم";
   }
 
   const officeKeywords = ["مكتب", "مكاتب", "شركة", "حجز", "سفريات", "طيران", "شحن", "استشارات", "محاماة", "ترجمة", "خدمات عامة", "تخليص", "عقاري", "صرافة", "تحويل"];
   if (officeKeywords.some(kw => text.includes(kw))) {
-    return "مكتب";
+    return "مكاتب";
   }
 
-  return "محل";
+  return "متاجر";
 };
 
 export default function App() {
@@ -800,21 +640,32 @@ export default function App() {
     setTab("home");
   };
 
-  const [splash, setSplash] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [tab, setTab] = useState<"home" | "directory" | "doctors" | "restaurants" | "offers" | "settings" | "notifications">("home");
-  const [directorySubTab, setDirectorySubTab] = useState<"doctors" | "cars" | "craftsmen">("doctors");
+  const [tab, setTab] = useState<"home" | "directory" | "doctors" | "services" | "restaurants" | "offers" | "events" | "settings" | "notifications">("home");
+  const [eventsSubTab, setEventsSubTab] = useState<"events" | "offers">("events");
+  const [homeEventsSubTab, setHomeEventsSubTab] = useState<"all" | "events" | "offers">("all");
+  const [directorySubTab, setDirectorySubTab] = useState<"doctors" | "cars">("doctors");
+  const [doctorCategoryFilter, setDoctorCategoryFilter] = useState("الكل");
   const [homeSubTab, setHomeSubTab] = useState<"doctors" | "cars" | "restaurants">("doctors");
   const [marketSearch, setMarketSearch] = useState("");
   const [marketCategoryFilter, setMarketCategoryFilter] = useState<string>("all");
   const [showAllStoresOverlay, setShowAllStoresOverlay] = useState(false);
   const [storeSearchText, setStoreSearchText] = useState("");
+  const [selectedStoreCategoryTab, setSelectedStoreCategoryTab] = useState<string>("الكل");
   const [subTab, setSubTab] = useState<
     | "doctors"
     | "cars"
     | "service_offers"
     | "restaurants"
-    | "craftsmen"
+    | "complexes"
     | null
   >(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -825,27 +676,25 @@ export default function App() {
     null,
   );
   const [selectedServiceOffer, setSelectedServiceOffer] = useState<ServiceOffer | null>(null);
-  const [selectedMarketListing, setSelectedMarketListing] = useState<MarketListing | null>(null);
   const [selectedTaxi, setSelectedTaxi] = useState<TaxiDriver | null>(null);
-  const [selectedCraftsman, setSelectedCraftsman] = useState<Craftsman | null>(null);
   const [selectedBanner, setSelectedBanner] = useState<BannerAd | null>(null);
   const [search, setSearch] = useState("");
   const [restaurantSearch, setRestaurantSearch] = useState("");
   const [stationSearch, setStationSearch] = useState("");
-  const [craftsmanSearch, setCraftsmanSearch] = useState("");
-  const [craftsmanCategoryFilter, setCraftsmanCategoryFilter] = useState("الكل");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [sortByClosest, setSortByClosest] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [taxiSearch, setTaxiSearch] = useState("");
-  const [taxiCategoryFilter, setTaxiCategoryFilter] = useState("خصوصي");
+  const [taxiCategoryFilter, setTaxiCategoryFilter] = useState("الكل");
   const [restaurantCategoryFilter, setRestaurantCategoryFilter] = useState("الكل");
   const [globalSearch, setGlobalSearch] = useState("");
   const [globalFilterCategory, setGlobalFilterCategory] =
     useState<string>("all");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [homeSegment, setHomeSegment] = useState<"doctors" | "complexes">("doctors");
   const [bannerIdx, setBannerIdx] = useState(0);
+  const [offerBannerIdx, setOfferBannerIdx] = useState(0);
   const [showAllOffersModal, setShowAllOffersModal] = useState(false);
   const [isHoveringOffers, setIsHoveringOffers] = useState(false);
   const offersScrollRef = useRef<HTMLDivElement>(null);
@@ -863,18 +712,6 @@ export default function App() {
       return defaultTaxis;
     }
   });
-  const [craftsmen, setCraftsmen] = useState<Craftsman[]>(() => {
-    try {
-      const cached = localStorage.getItem("cached_craftsmen");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-      return defaultCraftsmen;
-    } catch {
-      return defaultCraftsmen;
-    }
-  });
   const [serviceOffers, setServiceOffers] = useState<ServiceOffer[]>(() => {
     try {
       const cached = localStorage.getItem("cached_serviceOffers");
@@ -887,21 +724,63 @@ export default function App() {
       return defaultServiceOffers;
     }
   });
-  const [marketListings, setMarketListings] = useState<MarketListing[]>(() => {
+  const [doctors, setDoctors] = useState<Doctor[]>(() => {
     try {
-      const cached = localStorage.getItem("cached_marketListings");
+      return JSON.parse(localStorage.getItem("cached_doctors") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  const [doctorSpecialtiesList, setDoctorSpecialtiesList] = useState<DoctorSpecialty[]>(() => {
+    try {
+      const cached = localStorage.getItem("cached_doctor_specialties");
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-      return defaultMarketListings;
+      return [
+        { id: "s-1", name: "طب عام وطوارئ", order: 1 },
+        { id: "s-2", name: "باطنية وقلبية", order: 2 },
+        { id: "s-3", name: "جراحة عامة وناظورية", order: 3 },
+        { id: "s-4", name: "طب وجراحة العظام والمفاصل", order: 4 },
+        { id: "s-5", name: "نسائية وتوليد وعقم", order: 5 },
+        { id: "s-6", name: "طب الأطفال وحديثي الولادة", order: 6 },
+        { id: "s-7", name: "جلدية وتجميل وليزر", order: 7 },
+        { id: "s-8", name: "أنف وأذن وحنجرة", order: 8 },
+        { id: "s-9", name: "طب وجراحة العيون", order: 9 },
+        { id: "s-10", name: "طب وجراحة الفم والأسنان", order: 10 },
+        { id: "s-11", name: "جراحة المسالك البولية والتناسلية", order: 11 },
+        { id: "s-12", name: "أمراض الكلى والغسيل الكلوي", order: 12 },
+        { id: "s-13", name: "طب وجراحة الجملة العصبية", order: 13 },
+        { id: "s-14", name: "أمراض الصدر والجهاز التنفسي", order: 14 },
+        { id: "s-15", name: "أورام وسرطان", order: 15 },
+        { id: "s-16", name: "علاج طبيعي وتأهيل", order: 16 },
+        { id: "s-17", name: "مختبرات وتحليلات مرضية", order: 17 },
+        { id: "s-18", name: "أشعة وسونار وتصوير طبقي", order: 18 },
+        { id: "s-19", name: "تغذية علاجية ورشاقة", order: 19 },
+        { id: "s-20", name: "طب الأسرة والرعاية الأولية", order: 20 },
+      ];
     } catch {
-      return defaultMarketListings;
+      return [];
     }
   });
-  const [doctors, setDoctors] = useState<Doctor[]>(() => {
+
+  const [serviceCategoriesList, setServiceCategoriesList] = useState<ServiceCategory[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem("cached_doctors") || "[]");
+      const cached = localStorage.getItem("cached_service_categories");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return [
+        { id: "sc-1", name: "سواق تكسي ونقل", order: 1 },
+        { id: "sc-2", name: "صيانة ومولدات", order: 2 },
+        { id: "sc-3", name: "حرفيين ومهن حرة", order: 3 },
+        { id: "sc-4", name: "توصيل وشحن", order: 4 },
+        { id: "sc-5", name: "خدمات عامة", order: 5 },
+        { id: "sc-6", name: "محلات وتجارية", order: 6 },
+      ];
     } catch {
       return [];
     }
@@ -944,7 +823,7 @@ export default function App() {
     }
   });
 
-  const toggleFavorite = async (id: string, type: 'doctor' | 'taxi' | 'craftsman' | 'market_listing' | 'store' | 'offer') => {
+  const toggleFavorite = async (id: string, type: 'doctor' | 'taxi' | 'store' | 'offer') => {
     const isFav = favoriteIds.includes(id);
     const nextFavs = isFav ? favoriteIds.filter((f) => f !== id) : [...favoriteIds, id];
     setFavoriteIds(nextFavs);
@@ -959,20 +838,25 @@ export default function App() {
     } else if (type === 'taxi') {
       setTaxis((prev) => prev.map((t) => t.id === id ? { ...t, showInHome: newShowInHome } : t));
       firebaseService.updateDocument('taxis', id, { showInHome: newShowInHome }).catch(() => {});
-    } else if (type === 'craftsman') {
-      setCraftsmen((prev) => prev.map((c) => c.id === id ? { ...c, showInHome: newShowInHome } : c));
-      firebaseService.updateDocument('craftsmen', id, { showInHome: newShowInHome }).catch(() => {});
-    } else if (type === 'market_listing') {
-      setMarketListings((prev) => prev.map((ml) => ml.id === id ? { ...ml, showInHome: newShowInHome } : ml));
-      firebaseService.updateDocument('govAnnouncements', id, { showInHome: newShowInHome }).catch(() => {});
     } else if (type === 'store') {
       setMarketStores((prev) => prev.map((s) => s.id === id ? { ...s, showInHome: newShowInHome } : s));
       firebaseService.updateDocument('marketStores', id, { showInHome: newShowInHome }).catch(() => {});
     } else if (type === 'offer') {
       setServiceOffers((prev) => prev.map((so) => so.id === id ? { ...so, showInHome: newShowInHome } : so));
       firebaseService.updateDocument('serviceOffers', id, { showInHome: newShowInHome }).catch(() => {});
+    } else if (type === 'govAnnouncement' || (type as string) === 'event') {
+      setGovAnnouncements((prev) => prev.map((g) => g.id === id ? { ...g, showInHome: newShowInHome } : g));
+      firebaseService.updateDocument('govAnnouncements', id, { showInHome: newShowInHome }).catch(() => {});
     }
   };
+
+  const [medicalComplexes, setMedicalComplexes] = useState<MarketStore[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("cached_medicalComplexes") || "[]");
+    } catch {
+      return [];
+    }
+  });
 
   const [marketStores, setMarketStores] = useState<MarketStore[]>(() => {
     try {
@@ -984,7 +868,7 @@ export default function App() {
 
   const dirList = useMemo(() => {
     const doctorItems = doctors.map((d) => ({
-      id: d.id,
+      id: `doc_${d.id}`,
       type: 'doctor' as const,
       typeLabel: 'طبيب 🩺',
       name: d.name,
@@ -995,7 +879,7 @@ export default function App() {
     }));
 
     const taxiItems = taxis.map((t) => ({
-      id: t.id,
+      id: `taxi_${t.id}`,
       type: 'taxi' as const,
       typeLabel: 'تكسي 🚕',
       name: t.name,
@@ -1005,21 +889,21 @@ export default function App() {
       original: t,
     }));
 
-    const craftsmanItems = craftsmen.map((c) => ({
-      id: c.id,
-      type: 'craftsman' as const,
-      typeLabel: 'أسطى 🛠️',
+    const complexItems = medicalComplexes.map((c) => ({
+      id: `complex_${c.id}`,
+      type: 'store' as const,
+      typeLabel: 'مجمع طبي 🏥',
       name: c.name,
-      subtitle: c.craft || c.category || 'أسطى / حرفي',
-      image: c.image,
-      showInHome: c.showInHome || favoriteIds.includes(c.id),
+      subtitle: c.category || 'مجمع طبي',
+      image: c.logoImage || c.coverImage,
+      showInHome: (c as any).showInHome || (c as any).isFeatured || favoriteIds.includes(c.id),
       original: c,
     }));
 
     const storeItems = marketStores.map((s) => ({
-      id: s.id,
+      id: `store_${s.id}`,
       type: 'store' as const,
-      typeLabel: 'متجر 🏪',
+      typeLabel: (s as any).isRestaurant || s.category === 'مطاعم' || s.category === 'مطعم' ? 'مطعم 🍽️' : 'متجر 🏪',
       name: s.name,
       subtitle: s.category || 'متجر',
       image: s.logoImage || s.coverImage,
@@ -1028,7 +912,7 @@ export default function App() {
     }));
 
     const offerItems = serviceOffers.map((so) => ({
-      id: so.id,
+      id: `offer_${so.id}`,
       type: 'offer' as const,
       typeLabel: 'عرض 🏷️',
       name: so.title,
@@ -1038,21 +922,21 @@ export default function App() {
       original: so,
     }));
 
-    const listingItems = marketListings.map((ml) => ({
-      id: ml.id,
-      type: 'market_listing' as const,
-      typeLabel: ml.category === 'سيارات' ? 'سيارة 🚗' : ml.category === 'عقارات' ? 'عقار 🏠' : ml.category === 'موبايلات' ? 'موبايل 📱' : 'سوق 🛍️',
-      name: ml.title,
-      subtitle: ml.price || ml.category || 'سوق',
-      image: ml.image || (ml.images && ml.images[0]),
-      showInHome: ml.showInHome || (ml as any).isFeatured || favoriteIds.includes(ml.id),
-      original: ml,
+    const eventItems = govAnnouncements.map((g) => ({
+      id: `event_${g.id}`,
+      type: 'event' as const,
+      typeLabel: 'حدث ⚡',
+      name: g.title,
+      subtitle: g.entity || 'حدث الشرقاط',
+      image: g.image || (g.images && g.images[0]),
+      showInHome: (g as any).showInHome || (g as any).isFeatured || favoriteIds.includes(g.id),
+      original: g,
     }));
 
-    const allItems = [...doctorItems, ...taxiItems, ...craftsmanItems, ...storeItems, ...offerItems, ...listingItems];
+    const allItems = [...doctorItems, ...taxiItems, ...complexItems, ...storeItems, ...offerItems, ...eventItems];
     const featured = allItems.filter((item) => item.showInHome);
-    return featured.length > 0 ? featured : allItems.slice(0, 15);
-  }, [doctors, taxis, craftsmen, marketStores, serviceOffers, marketListings, favoriteIds]);
+    return featured.length > 0 ? featured : allItems.slice(0, 20);
+  }, [doctors, taxis, medicalComplexes, marketStores, serviceOffers, govAnnouncements, favoriteIds]);
 
   // Real-time Order Tracker State
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
@@ -1088,12 +972,6 @@ export default function App() {
   // Automated Cache Syncing to LocalStorage to prevent stale cache or data loss
   useEffect(() => {
     try {
-      localStorage.setItem("cached_marketListings", JSON.stringify(marketListings));
-    } catch (e) {}
-  }, [marketListings]);
-
-  useEffect(() => {
-    try {
       localStorage.setItem("cached_doctors", JSON.stringify(doctors));
     } catch (e) {}
   }, [doctors]);
@@ -1103,12 +981,6 @@ export default function App() {
       localStorage.setItem("cached_taxis", JSON.stringify(taxis));
     } catch (e) {}
   }, [taxis]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("cached_craftsmen", JSON.stringify(craftsmen));
-    } catch (e) {}
-  }, [craftsmen]);
 
   useEffect(() => {
     try {
@@ -1124,6 +996,12 @@ export default function App() {
 
   useEffect(() => {
     try {
+      localStorage.setItem("cached_medicalComplexes", JSON.stringify(medicalComplexes));
+    } catch (e) {}
+  }, [medicalComplexes]);
+
+  useEffect(() => {
+    try {
       localStorage.setItem("cached_marketStores", JSON.stringify(marketStores));
     } catch (e) {}
   }, [marketStores]);
@@ -1133,6 +1011,12 @@ export default function App() {
       localStorage.setItem("cached_serviceOffers", JSON.stringify(serviceOffers));
     } catch (e) {}
   }, [serviceOffers]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("cached_doctor_specialties", JSON.stringify(doctorSpecialtiesList));
+    } catch (e) {}
+  }, [doctorSpecialtiesList]);
   const [marketProducts, setMarketProducts] = useState<MarketProduct[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("cached_marketProducts") || "[]");
@@ -1176,11 +1060,6 @@ export default function App() {
     if (!selectedServiceOffer) return null;
     return serviceOffers.find((so) => so.id === selectedServiceOffer.id) || selectedServiceOffer;
   }, [serviceOffers, selectedServiceOffer]);
-
-  const activeMarketListing = useMemo(() => {
-    if (!selectedMarketListing) return null;
-    return marketListings.find((ml) => ml.id === selectedMarketListing.id) || selectedMarketListing;
-  }, [marketListings, selectedMarketListing]);
 
   const filteredServiceOffers = useMemo(() => {
     return serviceOffers
@@ -1285,20 +1164,9 @@ export default function App() {
         );
       })
       .sort((a, b) => {
-        if (sortByClosest && userLocation) {
-          const hasA = typeof a.lat === "number" && typeof a.lng === "number";
-          const hasB = typeof b.lat === "number" && typeof b.lng === "number";
-          if (hasA && hasB) {
-            const distA = getDistance(userLocation.lat, userLocation.lng, a.lat!, a.lng!);
-            const distB = getDistance(userLocation.lat, userLocation.lng, b.lat!, b.lng!);
-            return distA - distB;
-          }
-          if (hasA) return -1;
-          if (hasB) return 1;
-        }
         return (b.createdAt || 0) - (a.createdAt || 0);
       });
-  }, [govAnnouncements, stationSearch, sortByClosest, userLocation]);
+  }, [govAnnouncements, stationSearch]);
 
   const [appSettings, setAppSettings] = useState<{
     hospitalDirector?: string;
@@ -1331,36 +1199,13 @@ export default function App() {
     localStorage.setItem("read_notification_ids", JSON.stringify(allIds));
   };
 
-  useEffect(() => {
-    if (isHoveringOffers) return;
-    const interval = setInterval(() => {
-      if (offersScrollRef.current) {
-        const container = offersScrollRef.current;
-        const maxScroll = container.scrollWidth - container.clientWidth;
-        const currentScroll = Math.abs(container.scrollLeft);
-
-        if (currentScroll >= maxScroll - 15) {
-          container.scrollTo({ left: 0, behavior: "smooth" });
-        } else {
-          container.scrollBy({ left: -210, behavior: "smooth" });
-        }
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isHoveringOffers]);
+  // Automated Cache Syncing to LocalStorage to prevent stale cache or data loss
   const [sidebarPage, setSidebarPage] = useState<
     "about" | "privacy" | "contact" | "admin" | "terms" | null
   >(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAdModal, setShowAdModal] = useState(false);
-  const [bookingDoctor, setBookingDoctor] = useState<Doctor | null>(null);
-  const [bookingData, setBookingData] = useState({
-    patientName: "",
-    patientPhone: "",
-  });
-  const [bookingToast, setBookingToast] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadTracker, setLoadTracker] = useState<Record<string, boolean>>({
     doctors: false,
@@ -1500,7 +1345,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    // 1) Show local cache immediately (instant loading feel without read)
+    // 1) Show local cache immediately (instant loading feel without network reads)
     const loadFromCache = (key: string, setter: (data: any) => void) => {
       try {
         const cached = localStorage.getItem(key);
@@ -1509,63 +1354,55 @@ export default function App() {
     };
     loadFromCache('cached_doctors', setDoctors);
     loadFromCache('cached_taxis', setTaxis);
-    loadFromCache('cached_craftsmen', setCraftsmen);
     loadFromCache('cached_govAnnouncements', setGovAnnouncements);
     loadFromCache('cached_banners', setBanners);
     loadFromCache('cached_marketStores', setMarketStores);
     loadFromCache('cached_marketProducts', setMarketProducts);
     loadFromCache('cached_hospitalDoctors', setHospitalDoctors);
-    loadFromCache('cached_serviceOffers', setServiceOffers);
-    loadFromCache('cached_marketListings', setMarketListings);
 
     // Load settings from cache if needed
     try {
-        const cachedSettings = localStorage.getItem('cached_settings');
-        if (cachedSettings) setAppSettings(JSON.parse(cachedSettings));
+      const cachedSettings = localStorage.getItem('cached_settings');
+      if (cachedSettings) setAppSettings(JSON.parse(cachedSettings));
     } catch(e) {}
 
-    // 2) Don't refetch from server unless it's been 10 minutes in this browser session
-    const lastFetch = Number(sessionStorage.getItem('lastFullFetch') || 0);
-    const TEN_MIN = 10 * 60 * 1000;
-    if (Date.now() - lastFetch < TEN_MIN) {
+    // 2) Don't refetch from server unless it's been 30 minutes (persistent across tabs/sessions)
+    const lastFetch = Number(localStorage.getItem('lastFullFetch') || 0);
+    const THIRTY_MIN = 30 * 60 * 1000;
+    if (Date.now() - lastFetch < THIRTY_MIN) {
       setLoadTracker({
         doctors: true, govAnnouncements: true, banners: true,
         marketStores: true, hospitalDoctors: true, settings: true, serviceOffers: true,
       });
-      return; // Data in cache is sufficient
+      return; // Data in persistent cache is sufficient
     }
 
-    // 3) Actual read from server once (not a permanent listener)
+    // 3) Actual read from server once for active collections (with safety caps)
     const fetchAll = async () => {
-      const [doctors, taxisDocs, gov, banners, stores, products, hospDoctors, offers, settingsDocs, notificationsDocs, craftsmenDocs, marketListingsDocs] = await Promise.all([
-        firebaseService.fetchCollectionOnce<Doctor>('doctors'),
-        firebaseService.fetchCollectionOnce<TaxiDriver>('taxis'),
-        firebaseService.fetchCollectionOnce<GovAnnouncement>('govAnnouncements'),
-        firebaseService.fetchCollectionOnce<BannerAd>('banners'),
-        firebaseService.fetchCollectionOnce<any>('market_stores'),
+      const [doctors, taxisDocs, gov, banners, stores, complexes, products, hospDoctors, settingsDocs, notificationsDocs] = await Promise.all([
+        firebaseService.fetchCollectionOnce<Doctor>('doctors', undefined, 'desc', 150),
+        firebaseService.fetchCollectionOnce<TaxiDriver>('taxis', undefined, 'desc', 100),
+        firebaseService.fetchCollectionOnce<GovAnnouncement>('govAnnouncements', undefined, 'desc', 50),
+        firebaseService.fetchCollectionOnce<BannerAd>('banners', undefined, 'desc', 50),
+        firebaseService.fetchCollectionOnce<any>('market_stores', undefined, 'desc', 100),
+        firebaseService.fetchCollectionOnce<any>('medical_complexes', undefined, 'desc', 100),
         firebaseService.fetchAllProductsOnce(),
-        firebaseService.fetchCollectionOnce<HospitalDoctor>('hospital_doctors'),
-        firebaseService.fetchCollectionOnce<ServiceOffer>('serviceOffers'),
-        firebaseService.fetchCollectionOnce<any>('settings'),
-        firebaseService.fetchCollectionOnce<Notification>('notifications'),
-        firebaseService.fetchCollectionOnce<Craftsman>('craftsmen'),
-        firebaseService.fetchCollectionOnce<MarketListing>('govAnnouncements'),
+        firebaseService.fetchCollectionOnce<HospitalDoctor>('hospital_doctors', undefined, 'desc', 100),
+        firebaseService.fetchCollectionOnce<any>('settings', undefined, 'desc', 10),
+        firebaseService.fetchCollectionOnce<Notification>('notifications', undefined, 'desc', 50),
       ]);
 
       setDoctors(doctors);
       if (taxisDocs && taxisDocs.length > 0) setTaxis(taxisDocs);
-      if (craftsmenDocs && craftsmenDocs.length > 0) setCraftsmen(craftsmenDocs);
       setGovAnnouncements(gov);
       setBanners(banners);
-      setMarketStores(stores);
+
+      setMedicalComplexes(complexes || []);
+      setMarketStores(stores || []);
+
       setMarketProducts(products);
       setHospitalDoctors(hospDoctors);
-      setServiceOffers(offers);
       setNotifications(notificationsDocs || []);
-      if (marketListingsDocs) {
-        setMarketListings(marketListingsDocs);
-        localStorage.setItem('cached_marketListings', JSON.stringify(marketListingsDocs));
-      }
 
       const config = settingsDocs.find((d) => d.id === "general");
       if (config) {
@@ -1580,18 +1417,13 @@ export default function App() {
 
       localStorage.setItem('cached_doctors', JSON.stringify(doctors));
       if (taxisDocs && taxisDocs.length > 0) localStorage.setItem('cached_taxis', JSON.stringify(taxisDocs));
-      if (craftsmenDocs && craftsmenDocs.length > 0) localStorage.setItem('cached_craftsmen', JSON.stringify(craftsmenDocs));
       localStorage.setItem('cached_govAnnouncements', JSON.stringify(gov));
       localStorage.setItem('cached_banners', JSON.stringify(banners));
       localStorage.setItem('cached_marketStores', JSON.stringify(stores));
       localStorage.setItem('cached_marketProducts', JSON.stringify(products));
       localStorage.setItem('cached_hospitalDoctors', JSON.stringify(hospDoctors));
-      localStorage.setItem('cached_serviceOffers', JSON.stringify(offers));
       localStorage.setItem('cached_notifications', JSON.stringify(notificationsDocs || []));
-      if (marketListingsDocs) {
-        localStorage.setItem('cached_marketListings', JSON.stringify(marketListingsDocs));
-      }
-      sessionStorage.setItem('lastFullFetch', String(Date.now()));
+      localStorage.setItem('lastFullFetch', String(Date.now()));
 
       setLoadTracker({
         doctors: true, govAnnouncements: true, banners: true,
@@ -1608,32 +1440,81 @@ export default function App() {
     | "main"
     | "doctors"
     | "taxis"
-    | "craftsmen"
     | "banners"
-    | "govAnnouncements"
     | "settings"
+    | "medical_complexes"
     | "market_stores"
     | "market_products"
-    | "hospital_doctors"
-    | "restaurant_orders"
     | "serviceOffers"
+    | "offer_products"
     | "notifications"
-    | "market_listings"
   >("main");
 
   const [adminSelectedStore, setAdminSelectedStore] = useState<any>(null);
   const [adminMarketProducts, setAdminMarketProducts] = useState<any[]>([]);
 
+  const [adminSelectedOffer, setAdminSelectedOffer] = useState<any>(null);
+  const [adminOfferProducts, setAdminOfferProducts] = useState<any[]>([]);
+
   // Fetch Admin Market Products
   useEffect(() => {
     if (adminSelectedStore && isAdmin && adminView === "market_products") {
-      firebaseService.fetchCollectionOnce<any>(`market_stores/${adminSelectedStore.id}/market_products`)
-        .then(setAdminMarketProducts)
-        .catch(console.error);
+      const isComplex =
+        adminSelectedStore._storeType === "complex" ||
+        adminSelectedStore.isMedicalComplex === true ||
+        adminSelectedStore.category === "مجمع طبي" ||
+        adminSelectedStore.category === "مستشفى" ||
+        adminSelectedStore.category === "عيادات";
+
+      const targetPath = isComplex
+        ? `medical_complexes/${adminSelectedStore.id}/complex_doctors`
+        : `market_stores/${adminSelectedStore.id}/market_products`;
+
+      firebaseService.fetchCollectionOnce<any>(targetPath)
+        .then((items) => {
+          if (items && items.length > 0) {
+            setAdminMarketProducts(items);
+          } else {
+            // Check fallback path
+            const fallbackPath = isComplex
+              ? `market_stores/${adminSelectedStore.id}/market_products`
+              : `medical_complexes/${adminSelectedStore.id}/complex_doctors`;
+            return firebaseService.fetchCollectionOnce<any>(fallbackPath)
+              .then((fallbackItems) => setAdminMarketProducts(fallbackItems || []));
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          setAdminMarketProducts([]);
+        });
     } else {
       setAdminMarketProducts([]);
     }
-  }, [adminSelectedStore, isAdmin, adminView]);
+  }, [adminSelectedStore, isAdmin, adminView, medicalComplexes]);
+
+  // Fetch Admin Offer Products
+  useEffect(() => {
+    if (adminSelectedOffer && isAdmin && adminView === "offer_products") {
+      firebaseService.fetchCollectionOnce<any>(`serviceOffers/${adminSelectedOffer.id}/offer_products`)
+        .then(setAdminOfferProducts)
+        .catch(console.error);
+    } else {
+      setAdminOfferProducts([]);
+    }
+  }, [adminSelectedOffer, isAdmin, adminView]);
+
+  const [activeOfferProductsList, setActiveOfferProductsList] = useState<any[]>([]);
+
+  // Fetch Offer Products for public active offer modal
+  useEffect(() => {
+    if (activeServiceOffer?.id) {
+      firebaseService.fetchCollectionOnce<any>(`serviceOffers/${activeServiceOffer.id}/offer_products`)
+        .then((items) => setActiveOfferProductsList(items || []))
+        .catch(() => setActiveOfferProductsList([]));
+    } else {
+      setActiveOfferProductsList([]);
+    }
+  }, [activeServiceOffer?.id]);
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -1658,20 +1539,55 @@ export default function App() {
     return () => clearInterval(interval);
   }, [allBanners.length]);
 
+  // Offer Banners Auto-Advance
+  useEffect(() => {
+    const activeOffersCount = (serviceOffers || []).filter(
+      (o) => o.isActive !== false && o.title && o.title.trim() !== "",
+    ).length;
+    if (activeOffersCount <= 1) return;
+    const interval = setInterval(() => {
+      setOfferBannerIdx((prev) => (prev + 1) % activeOffersCount);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [serviceOffers]);
+
+  // Doctor Specialty Extractor
+  const doctorSpecialties = useMemo(() => {
+    const set = new Set<string>();
+    // First, add predefined specialties in order
+    doctorSpecialtiesList.forEach((s) => {
+      if (s.name && s.name.trim()) {
+        set.add(s.name.trim());
+      }
+    });
+    // Second, add any specialties from existing doctors
+    doctors.forEach((d) => {
+      if (d.subtitle && d.subtitle.trim()) {
+        set.add(d.subtitle.trim());
+      }
+    });
+    return ["الكل", ...Array.from(set)];
+  }, [doctors, doctorSpecialtiesList]);
+
   // Handlers
   const filteredDoctors = useMemo(() => {
     return doctors
       .filter((doc) => {
+        // 1. Specialty Filter
+        if (doctorCategoryFilter !== "الكل") {
+          const matchSpecialty = (doc.subtitle || "").trim() === doctorCategoryFilter.trim();
+          if (!matchSpecialty) return false;
+        }
+
+        // 2. Search query filter
         const name = String(doc.name || "").toLowerCase();
         const subtitle = String(doc.subtitle || "").toLowerCase();
         const location = String(doc.location || "").toLowerCase();
-        const booking = doc.isBookingEnabled ? "حجز" : "";
         const searchStr = search.toLowerCase();
         return (
           name.includes(searchStr) ||
           subtitle.includes(searchStr) ||
-          location.includes(searchStr) ||
-          booking.includes(searchStr)
+          location.includes(searchStr)
         );
       })
       .sort((a, b) => {
@@ -1681,7 +1597,7 @@ export default function App() {
         const nameB = String(b.name || "");
         return nameA.localeCompare(nameB, "ar");
       });
-  }, [doctors, search]);
+  }, [doctors, search, doctorCategoryFilter]);
 
 
   const filteredGovAnnouncements = useMemo(() => {
@@ -1713,13 +1629,30 @@ export default function App() {
     </div>
   );
 
+  const activeServiceCategories = useMemo(() => {
+    const listFromState = (serviceCategoriesList || []).map((c) => c.name.trim()).filter(Boolean);
+    const listFromTaxis = (taxis || []).map((t) => (t.category || t.carType || "").trim()).filter(Boolean);
+    const defaults = [
+      "سواق تكسي ونقل",
+      "صيانة ومولدات",
+      "حرفيين ومهن حرة",
+      "توصيل وشحن",
+      "خدمات عامة",
+      "محلات وتجارية",
+    ];
+    return Array.from(new Set([...listFromState, ...defaults, ...listFromTaxis]));
+  }, [serviceCategoriesList, taxis]);
+
   const filteredTaxis = useMemo(() => {
     return taxis.filter((t) => {
       // 1. Category Filter
-      if (taxiCategoryFilter !== "الكل") {
-        const cat = taxiCategoryFilter;
-        const matchCat = t.category === cat || t.type === cat;
-        const matchText = (t.carType || "").includes(cat) || (t.notes || "").includes(cat);
+      if (taxiCategoryFilter && taxiCategoryFilter !== "الكل") {
+        const cat = taxiCategoryFilter.trim().toLowerCase();
+        const itemCat = (t.category || t.type || "").trim().toLowerCase();
+        const itemText = (t.carType || "" + " " + ((t as any).subtitle || "") + " " + (t.notes || "")).toLowerCase();
+
+        const matchCat = itemCat === cat;
+        const matchText = itemText.includes(cat);
         if (!matchCat && !matchText) return false;
       }
 
@@ -1731,37 +1664,18 @@ export default function App() {
       const location = normalizeArabic(String(t.location || ""));
       const phone = String(t.phone || "");
       const notes = normalizeArabic(String(t.notes || ""));
+      const category = normalizeArabic(String(t.category || ""));
 
       return (
         name.includes(q) ||
         carType.includes(q) ||
         location.includes(q) ||
         phone.includes(q) ||
-        notes.includes(q)
+        notes.includes(q) ||
+        category.includes(q)
       );
     });
   }, [taxis, taxiSearch, taxiCategoryFilter]);
-
-  const filteredCraftsmen = useMemo(() => {
-    return craftsmen.filter((c) => {
-      // Search Filter
-      if (!craftsmanSearch.trim()) return true;
-      const q = normalizeArabic(craftsmanSearch);
-      const name = normalizeArabic(String(c.name || ""));
-      const craft = normalizeArabic(String(c.craft || ""));
-      const location = normalizeArabic(String(c.location || ""));
-      const phone = String(c.phone || "");
-      const notes = normalizeArabic(String(c.notes || ""));
-
-      return (
-        name.includes(q) ||
-        craft.includes(q) ||
-        location.includes(q) ||
-        phone.includes(q) ||
-        notes.includes(q)
-      );
-    });
-  }, [craftsmen, craftsmanSearch]);
 
   const resetViews = () => {
     setSubTab(null);
@@ -1769,11 +1683,9 @@ export default function App() {
     setSelectedGovAnnouncement(null);
     setSelectedServiceOffer(null);
     setSelectedTaxi(null);
-    setSelectedCraftsman(null);
     setSearch("");
     setRestaurantSearch("");
     setTaxiSearch("");
-    setCraftsmanSearch("");
     setCategoryFilter("all");
     setTaxiCategoryFilter("خصوصي");
     setRestaurantCategoryFilter("مطعم");
@@ -1875,18 +1787,26 @@ export default function App() {
       doctors: "doctors",
       banners: "banners",
       govAnnouncements: "govAnnouncements",
+      medical_complexes: "medical_complexes",
       market_stores: "market_stores",
-      hospital_doctors: "hospital_doctors",
       serviceOffers: "serviceOffers",
       taxis: "taxis",
-      craftsmen: "craftsmen",
       notifications: "notifications",
-      market_listings: "govAnnouncements",
     };
 
     let firestoreCol = collectionMapping[type];
     if (type === "market_products" && adminSelectedStore) {
-      firestoreCol = `market_stores/${adminSelectedStore.id}/market_products`;
+      const isComplex =
+        adminSelectedStore._storeType === "complex" ||
+        adminSelectedStore.isMedicalComplex === true ||
+        adminSelectedStore.category === "مجمع طبي" ||
+        adminSelectedStore.category === "مستشفى" ||
+        adminSelectedStore.category === "عيادات";
+      firestoreCol = isComplex
+        ? `medical_complexes/${adminSelectedStore.id}/complex_doctors`
+        : `market_stores/${adminSelectedStore.id}/market_products`;
+    } else if (type === "offer_products" && adminSelectedOffer) {
+      firestoreCol = `serviceOffers/${adminSelectedOffer.id}/offer_products`;
     }
 
     // Update local state and local cache immediately
@@ -1894,12 +1814,6 @@ export default function App() {
       setTaxis((prev) => {
         const next = prev.filter((item) => item.id !== id);
         try { localStorage.setItem("cached_taxis", JSON.stringify(next)); } catch {}
-        return next;
-      });
-    } else if (type === "craftsmen") {
-      setCraftsmen((prev) => {
-        const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_craftsmen", JSON.stringify(next)); } catch {}
         return next;
       });
     } else if (type === "doctors") {
@@ -1920,16 +1834,16 @@ export default function App() {
         try { localStorage.setItem("cached_govAnnouncements", JSON.stringify(next)); } catch {}
         return next;
       });
+    } else if (type === "medical_complexes") {
+      setMedicalComplexes((prev) => {
+        const next = prev.filter((item) => item.id !== id);
+        try { localStorage.setItem("cached_medicalComplexes", JSON.stringify(next)); } catch {}
+        return next;
+      });
     } else if (type === "market_stores") {
       setMarketStores((prev) => {
         const next = prev.filter((item) => item.id !== id);
         try { localStorage.setItem("cached_marketStores", JSON.stringify(next)); } catch {}
-        return next;
-      });
-    } else if (type === "hospital_doctors") {
-      setHospitalDoctors((prev) => {
-        const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_hospitalDoctors", JSON.stringify(next)); } catch {}
         return next;
       });
     } else if (type === "serviceOffers") {
@@ -1939,21 +1853,18 @@ export default function App() {
         return next;
       });
     } else if (type === "market_products") {
+      setAdminMarketProducts((prev) => prev.filter((item) => item.id !== id));
       setMarketProducts((prev) => {
         const next = prev.filter((item) => item.id !== id);
         try { localStorage.setItem("cached_marketProducts", JSON.stringify(next)); } catch {}
         return next;
       });
+    } else if (type === "offer_products") {
+      setAdminOfferProducts((prev) => prev.filter((item) => item.id !== id));
     } else if (type === "notifications") {
       setNotifications((prev) => {
         const next = prev.filter((item) => item.id !== id);
         try { localStorage.setItem("cached_notifications", JSON.stringify(next)); } catch {}
-        return next;
-      });
-    } else if (type === "market_listings") {
-      setMarketListings((prev) => {
-        const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_marketListings", JSON.stringify(next)); } catch {}
         return next;
       });
     }
@@ -1966,12 +1877,18 @@ export default function App() {
           adminSelectedStore &&
           adminSelectedStore.id !== "general"
         ) {
+          const isComplex =
+            medicalComplexes.some((c) => c.id === adminSelectedStore.id) ||
+            adminSelectedStore.isMedicalComplex ||
+            adminSelectedStore.category === "مجمع طبي" ||
+            adminSelectedStore.category === "مستشفى";
+          const parentCol = isComplex ? "medical_complexes" : "market_stores";
           await firebaseService.incrementDocumentField(
-            "market_stores",
+            parentCol,
             adminSelectedStore.id,
             "productCount",
             -1,
-          );
+          ).catch((e) => console.warn("Failed to decrement count:", e));
         }
       } catch (err) {
         console.error("Firestore deletion error:", err);
@@ -1982,22 +1899,14 @@ export default function App() {
   };
 
   const saveItem = async () => {
-    const isMarketProduct = adminView === "market_products";
+    const isMarketProduct = adminView === "market_products" || adminView === "offer_products";
     if (adminView === "notifications") {
       if (!formData.message || !formData.message.trim()) {
         alert("يرجى كتابة نص رسالة الإشعار");
         return;
       }
-    } else if (isMarketProduct && !formData.name) {
+    } else if (isMarketProduct && !formData.name && !formData.title) {
       alert("يرجى ملء اسم المنتج");
-      return;
-    }
-    if (
-      isMarketProduct &&
-      adminSelectedStore?.isRestaurant &&
-      !formData.productType
-    ) {
-      alert("إضافة إجبارية: يرجى تحديد هل هذا (عرض خاص) أم (منيو/وجبة ثابتة).");
       return;
     }
     if (!isMarketProduct && adminView !== "notifications" && !formData.name && !formData.title) {
@@ -2010,18 +1919,26 @@ export default function App() {
       doctors: "doctors",
       govAnnouncements: "govAnnouncements",
       banners: "banners",
+      medical_complexes: "medical_complexes",
       market_stores: "market_stores",
-      hospital_doctors: "hospital_doctors",
       serviceOffers: "serviceOffers",
       taxis: "taxis",
-      craftsmen: "craftsmen",
       notifications: "notifications",
-      market_listings: "govAnnouncements",
     };
 
     let firestoreCol = collectionMapping[adminView];
     if (adminView === "market_products" && adminSelectedStore) {
-      firestoreCol = `market_stores/${adminSelectedStore.id}/market_products`;
+      const isComplex =
+        adminSelectedStore._storeType === "complex" ||
+        adminSelectedStore.isMedicalComplex === true ||
+        adminSelectedStore.category === "مجمع طبي" ||
+        adminSelectedStore.category === "مستشفى" ||
+        adminSelectedStore.category === "عيادات";
+      firestoreCol = isComplex
+        ? `medical_complexes/${adminSelectedStore.id}/complex_doctors`
+        : `market_stores/${adminSelectedStore.id}/market_products`;
+    } else if (adminView === "offer_products" && adminSelectedOffer) {
+      firestoreCol = `serviceOffers/${adminSelectedOffer.id}/offer_products`;
     }
 
     if (firestoreCol) {
@@ -2033,10 +1950,16 @@ export default function App() {
       delete dataToSave.menuItemCategory;
       delete dataToSave.menuItemImage;
 
-      if (adminView === "market_stores") {
+      if (adminView === "medical_complexes" || adminView === "market_stores") {
         if (dataToSave.image) {
           dataToSave.logoImage = dataToSave.image;
           delete dataToSave.image;
+        }
+        if (dataToSave.menuCategories && typeof dataToSave.menuCategories === "string") {
+          dataToSave.menuCategories = dataToSave.menuCategories
+            .split(/[,،]/)
+            .map((cat: string) => cat.trim())
+            .filter(Boolean);
         }
         if (!isEdit) {
           dataToSave.productCount = 0;
@@ -2045,6 +1968,9 @@ export default function App() {
         dataToSave.updatedAt = Date.now();
         dataToSave.isActive = dataToSave.isActive ?? true;
         dataToSave.isFeatured = dataToSave.isFeatured ?? false;
+        if (adminView === "medical_complexes") {
+          dataToSave.isMedicalComplex = true;
+        }
       } else if (adminView === "market_products") {
         if (dataToSave.image) {
           dataToSave.images = [
@@ -2059,7 +1985,14 @@ export default function App() {
         } else if (isEdit && editingItem.images) {
           dataToSave.images = editingItem.images;
         }
-        dataToSave.price = Number(dataToSave.price) || 0;
+        if (dataToSave.price !== undefined && dataToSave.price !== null && String(dataToSave.price).trim() !== "") {
+          dataToSave.price = String(dataToSave.price).trim();
+        } else {
+          dataToSave.price = "0";
+        }
+        dataToSave.productType = "menu";
+        dataToSave.menuCategory = dataToSave.menuCategory || dataToSave.category || "عام";
+        dataToSave.category = dataToSave.category || dataToSave.menuCategory;
         dataToSave.isAvailable = dataToSave.isAvailable ?? true;
         dataToSave.isFeatured = dataToSave.isFeatured ?? false;
         if (!isEdit) {
@@ -2067,35 +2000,43 @@ export default function App() {
           dataToSave.storeId = adminSelectedStore?.id;
         }
         dataToSave.updatedAt = Date.now();
-      } else if (adminView === "hospital_doctors") {
-        if (!isEdit) dataToSave.createdAt = Date.now();
-        dataToSave.days = dataToSave.days || [];
-        dataToSave.isActive = dataToSave.isActive ?? true;
-        dataToSave.shift = dataToSave.shift || "صباحي";
-      } else if (adminView === "serviceOffers" || adminView === "govAnnouncements" || adminView === "market_listings") {
-        if (!isEdit) dataToSave.createdAt = Date.now();
-        dataToSave.isActive = dataToSave.isActive ?? true;
-        if (adminView === "market_listings") {
-          dataToSave.name = dataToSave.title || "";
-          if (dataToSave.image) {
-            dataToSave.images = [dataToSave.image];
-          } else {
-            dataToSave.images = dataToSave.images || [];
-          }
-          dataToSave.tag = dataToSave.tag || dataToSave.category || "سيارات";
+      } else if (adminView === "offer_products") {
+        if (dataToSave.image) {
+          dataToSave.images = [
+            dataToSave.image,
+            ...(isEdit
+              ? (editingItem.images || []).filter(
+                  (img: string) => img !== dataToSave.image,
+                )
+              : []),
+          ];
+          delete dataToSave.image;
+        } else if (isEdit && editingItem.images) {
+          dataToSave.images = editingItem.images;
+        }
+        if (dataToSave.price !== undefined && dataToSave.price !== null && String(dataToSave.price).trim() !== "") {
+          dataToSave.price = String(dataToSave.price).trim();
         } else {
-          if (dataToSave.images && dataToSave.images.length > 0) {
-            dataToSave.image = dataToSave.images[0];
-          }
+          dataToSave.price = "0";
+        }
+        dataToSave.productType = "offer_item";
+        dataToSave.menuCategory = dataToSave.menuCategory || dataToSave.category || "عام";
+        dataToSave.category = dataToSave.category || dataToSave.menuCategory;
+        dataToSave.isAvailable = dataToSave.isAvailable ?? true;
+        if (!isEdit) {
+          dataToSave.createdAt = Date.now();
+          dataToSave.offerId = adminSelectedOffer?.id;
+        }
+        dataToSave.updatedAt = Date.now();
+      } else if (adminView === "serviceOffers") {
+        if (!isEdit) dataToSave.createdAt = Date.now();
+        dataToSave.isActive = dataToSave.isActive ?? true;
+        if (dataToSave.images && dataToSave.images.length > 0) {
+          dataToSave.image = dataToSave.images[0];
         }
       } else if (adminView === "taxis") {
         if (!isEdit) dataToSave.createdAt = Date.now();
         dataToSave.carType = dataToSave.carType || dataToSave.subtitle || "";
-        dataToSave.phone = dataToSave.phone || dataToSave.phone1 || "";
-        dataToSave.notes = dataToSave.notes || dataToSave.description || "";
-      } else if (adminView === "craftsmen") {
-        if (!isEdit) dataToSave.createdAt = Date.now();
-        dataToSave.craft = dataToSave.craft || dataToSave.subtitle || "";
         dataToSave.phone = dataToSave.phone || dataToSave.phone1 || "";
         dataToSave.notes = dataToSave.notes || dataToSave.description || "";
       } else if (adminView === "notifications") {
@@ -2132,12 +2073,18 @@ export default function App() {
             adminSelectedStore &&
             adminSelectedStore.id !== "general"
           ) {
+            const isComplex =
+              medicalComplexes.some((c) => c.id === adminSelectedStore.id) ||
+              adminSelectedStore.isMedicalComplex ||
+              adminSelectedStore.category === "مجمع طبي" ||
+              adminSelectedStore.category === "مستشفى";
+            const parentCol = isComplex ? "medical_complexes" : "market_stores";
             await firebaseService.incrementDocumentField(
-              "market_stores",
+              parentCol,
               adminSelectedStore.id,
               "productCount",
               1,
-            );
+            ).catch((e) => console.warn("Failed to increment count:", e));
           }
         }
 
@@ -2150,15 +2097,6 @@ export default function App() {
               ? prev.map((i) => (i.id === savedId ? (fullSavedItem as TaxiDriver) : i))
               : [fullSavedItem as TaxiDriver, ...prev];
             try { localStorage.setItem("cached_taxis", JSON.stringify(next)); } catch {}
-            return next;
-          });
-        } else if (adminView === "craftsmen") {
-          setCraftsmen((prev) => {
-            const exists = prev.some((i) => i.id === savedId);
-            const next = exists
-              ? prev.map((i) => (i.id === savedId ? (fullSavedItem as Craftsman) : i))
-              : [fullSavedItem as Craftsman, ...prev];
-            try { localStorage.setItem("cached_craftsmen", JSON.stringify(next)); } catch {}
             return next;
           });
         } else if (adminView === "doctors") {
@@ -2179,13 +2117,13 @@ export default function App() {
             try { localStorage.setItem("cached_banners", JSON.stringify(next)); } catch {}
             return next;
           });
-        } else if (adminView === "govAnnouncements") {
-          setGovAnnouncements((prev) => {
+        } else if (adminView === "medical_complexes") {
+          setMedicalComplexes((prev) => {
             const exists = prev.some((i) => i.id === savedId);
             const next = exists
               ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
               : [fullSavedItem, ...prev];
-            try { localStorage.setItem("cached_govAnnouncements", JSON.stringify(next)); } catch {}
+            try { localStorage.setItem("cached_medicalComplexes", JSON.stringify(next)); } catch {}
             return next;
           });
         } else if (adminView === "market_stores") {
@@ -2195,15 +2133,6 @@ export default function App() {
               ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
               : [fullSavedItem, ...prev];
             try { localStorage.setItem("cached_marketStores", JSON.stringify(next)); } catch {}
-            return next;
-          });
-        } else if (adminView === "hospital_doctors") {
-          setHospitalDoctors((prev) => {
-            const exists = prev.some((i) => i.id === savedId);
-            const next = exists
-              ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
-              : [fullSavedItem, ...prev];
-            try { localStorage.setItem("cached_hospitalDoctors", JSON.stringify(next)); } catch {}
             return next;
           });
         } else if (adminView === "serviceOffers") {
@@ -2216,6 +2145,12 @@ export default function App() {
             return next;
           });
         } else if (adminView === "market_products") {
+          setAdminMarketProducts((prev) => {
+            const exists = prev.some((i) => i.id === savedId);
+            return exists
+              ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
+              : [fullSavedItem, ...prev];
+          });
           setMarketProducts((prev) => {
             const exists = prev.some((i) => i.id === savedId);
             const next = exists
@@ -2224,6 +2159,13 @@ export default function App() {
             try { localStorage.setItem("cached_marketProducts", JSON.stringify(next)); } catch {}
             return next;
           });
+        } else if (adminView === "offer_products") {
+          setAdminOfferProducts((prev) => {
+            const exists = prev.some((i) => i.id === savedId);
+            return exists
+              ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
+              : [fullSavedItem, ...prev];
+          });
         } else if (adminView === "notifications") {
           setNotifications((prev) => {
             const exists = prev.some((i) => i.id === savedId);
@@ -2231,15 +2173,6 @@ export default function App() {
               ? prev.map((i) => (i.id === savedId ? (fullSavedItem as Notification) : i))
               : [fullSavedItem as Notification, ...prev];
             try { localStorage.setItem("cached_notifications", JSON.stringify(next)); } catch {}
-            return next;
-          });
-        } else if (adminView === "market_listings") {
-          setMarketListings((prev) => {
-            const exists = prev.some((i) => i.id === savedId);
-            const next = exists
-              ? prev.map((i) => (i.id === savedId ? (fullSavedItem as MarketListing) : i))
-              : [fullSavedItem as MarketListing, ...prev];
-            try { localStorage.setItem("cached_marketListings", JSON.stringify(next)); } catch {}
             return next;
           });
         }
@@ -2269,14 +2202,34 @@ export default function App() {
     setEditingItem(null);
     const defaults: any = {};
     if (adminView === "doctors") defaults.category = "doctor";
-    if (adminView === "craftsmen") defaults.craft = "";
-    if (adminView === "market_stores") {
-      defaults.isRestaurant = true;
-      defaults.category = "مطاعم";
+    if (adminView === "banners") {
+      defaults.type = "internal";
+      defaults.targetType = "doctor";
     }
-    if (adminView === "market_listings") {
-      defaults.category = "سيارات";
-      defaults.showInHome = false;
+    if (adminView === "medical_complexes") {
+      defaults.isMedicalComplex = true;
+      defaults.showInHome = true;
+    }
+    if (adminView === "market_stores") {
+      defaults.category = "مطاعم";
+      defaults.showInHome = true;
+    }
+    if (adminView === "serviceOffers") {
+      defaults.isActive = true;
+    }
+    if (adminView === "market_products") {
+      const isComplex =
+        adminSelectedStore?._storeType === "complex" ||
+        adminSelectedStore?.isMedicalComplex === true ||
+        adminSelectedStore?.category === "مجمع طبي" ||
+        adminSelectedStore?.category === "مستشفى" ||
+        adminSelectedStore?.category === "عيادات";
+      if (isComplex) {
+        defaults.specialty = "";
+      } else {
+        defaults.menuCategory = "وجبات رئيسية";
+        defaults.isAvailable = true;
+      }
     }
 
     setFormData(defaults);
@@ -2522,44 +2475,39 @@ export default function App() {
   const renderHome = () => {
     const currentBanner = allBanners[bannerIdx % (allBanners.length || 1)];
 
-    const filteredMarketListings = marketListings.filter((ml) => {
-      if (ml.isActive === false) return false;
-      if (!ml.title || ml.title.trim() === "") return false;
-      const q = restaurantSearch.toLowerCase().trim();
-      const matchesQuery = !q ||
-        ml.title.toLowerCase().includes(q) ||
-        (ml.description && ml.description.toLowerCase().includes(q)) ||
-        (ml.location && ml.location.toLowerCase().includes(q)) ||
-        (ml.price && ml.price.toLowerCase().includes(q));
-
-      if (!matchesQuery) return false;
-
-      if (marketCategoryFilter === "all") return true;
-      return ml.category === marketCategoryFilter;
-    });
-
     return (
       <div className="space-y-4 pt-3 pb-20 animate-in fade-in duration-500">
         {/* Sticky Header */}
         <div
-          className="sticky top-0 z-50 flex items-center justify-center px-4 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-shirqat-primary/10 shadow-xs relative overflow-hidden"
+          className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-shirqat-primary/10 shadow-xs relative overflow-hidden"
           dir="rtl"
         >
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-l from-shirqat-primary/80 via-shirqat-primary to-shirqat-primary/30" />
 
-          {/* Back Button for subTab view */}
-          {subTab !== null && (
-            <button
-              onClick={() => setSubTab(null)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95"
-              title="رجوع"
-            >
-              <ChevronRight size={20} />
-            </button>
-          )}
+          {/* Right Side (على اليمين): Sidebar Menu / Settings (Show ONLY on main home) */}
+          <div className="flex items-center gap-2 z-10">
+            {subTab === null ? (
+              <div className="w-9 h-9" />
+            ) : (
+              <button
+                onClick={() => setSubTab(null)}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
+                title="رجوع"
+              >
+                <ChevronRight size={20} />
+              </button>
+            )}
+          </div>
 
-          {/* App Branding */}
-          <div className="flex items-center gap-2 justify-center">
+          {/* Center: App Branding */}
+          <button
+            onClick={() => {
+              setTab("home");
+              setSubTab(null);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="flex items-center gap-2 justify-center cursor-pointer active:scale-95 transition-transform z-10"
+          >
             <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm shadow-shirqat-primary/10 shrink-0">
               <img
                 src="/logo_shirqat.svg"
@@ -2571,6 +2519,11 @@ export default function App() {
             <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
               دليل <span className="text-shirqat-primary font-black">الشرقاط</span>
             </span>
+          </button>
+
+          {/* Left Side (على اليسار): Notifications Button (Show ONLY on main home) */}
+          <div className="flex items-center justify-end z-10">
+            <div className="w-9 h-9" />
           </div>
         </div>
 
@@ -2579,7 +2532,7 @@ export default function App() {
             {/* Banner Carousel */}
             {allBanners.length > 0 && (
               <div className="px-3">
-                <div className="relative w-full aspect-[82/50] max-h-[450px] overflow-hidden rounded-[2rem] shadow-lg group">
+                <div className="relative w-full aspect-[16/7] sm:aspect-[21/9] max-h-[300px] overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm group">
                   <AnimatePresence mode="popLayout">
                     <motion.div
                       key={currentBanner?.id}
@@ -2597,12 +2550,11 @@ export default function App() {
                               : b,
                           ),
                         );
-                        if (currentBanner.type === "text")
+                        if (currentBanner.type === "external" && currentBanner.url) {
+                          window.open(currentBanner.url, "_blank");
+                        } else if (currentBanner.type === "text") {
                           setSelectedBanner(currentBanner);
-                        if (
-                          currentBanner.type === "internal" &&
-                          (currentBanner.targetId || currentBanner.targetType === "hospital")
-                        ) {
+                        } else if (currentBanner.type === "internal" && currentBanner.targetId) {
                           if (currentBanner.targetType === "doctor") {
                             const doc = doctors.find((d) => d.id === currentBanner.targetId);
                             if (doc) {
@@ -2614,6 +2566,11 @@ export default function App() {
                             if (store) {
                               setSelectedStoreId(store.id);
                             }
+                          } else if (currentBanner.targetType === "serviceOffers") {
+                            const offer = (serviceOffers || []).find((o) => o.id === currentBanner.targetId);
+                            if (offer) {
+                              setSelectedServiceOffer(offer);
+                            }
                           } else if (currentBanner.targetType === "govAnnouncement") {
                             const gov = govAnnouncements.find((g) => g.id === currentBanner.targetId);
                             if (gov) {
@@ -2624,44 +2581,46 @@ export default function App() {
                       }}
                       className={`absolute inset-0 w-full h-full ${(currentBanner as any).isDynamic ? "" : "cursor-pointer"}`}
                     >
-                      {currentBanner?.image ? (
-                        <img
-                          src={currentBanner?.image}
-                          className="w-full h-full object-cover"
-                          alt=""
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-shirqat-primary to-emerald-700" />
-                      )}
-
-                      <div
-                        className="absolute inset-0 bg-black/10 backdrop-blur-[0.5px] flex flex-col p-5 text-right"
-                        dir="rtl"
-                      >
-                        <div className="flex items-center justify-start gap-3 mb-4">
-                          <h3 className="text-base font-display font-black text-white">
-                            {currentBanner?.title}
-                          </h3>
-                        </div>
-
-                        {!(currentBanner as any).isDynamic && (
-                          <div className="mt-auto">
-                            <p className="text-xs font-bold text-white/90 line-clamp-2">
-                              {currentBanner?.content}
-                            </p>
-                          </div>
+                      <>
+                        {currentBanner?.image ? (
+                          <img
+                            src={currentBanner?.image}
+                            className="w-full h-full object-cover"
+                            alt=""
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-shirqat-primary to-emerald-700" />
                         )}
-                      </div>
+
+                        <div
+                          className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10 flex flex-col justify-between p-3.5 sm:p-4 text-right"
+                          dir="rtl"
+                        >
+                          <div className="flex items-center justify-start gap-2">
+                            <h3 className="text-xs sm:text-sm font-display font-black text-white line-clamp-1 drop-shadow-xs">
+                              {currentBanner?.title}
+                            </h3>
+                          </div>
+
+                          {!(currentBanner as any).isDynamic && (
+                            <div className="mt-auto">
+                              <p className="text-[10px] sm:text-xs font-bold text-white/90 line-clamp-1 drop-shadow-xs">
+                                {currentBanner?.content}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </>
                     </motion.div>
                   </AnimatePresence>
 
-                  <div className="absolute bottom-3 left-5 flex gap-1.5 bg-black/20 backdrop-blur-md p-1.5 rounded-full">
+                  <div className="absolute bottom-2.5 left-3.5 flex gap-1 bg-black/30 backdrop-blur-md px-2 py-1 rounded-full z-10">
                     {allBanners.map((_, i) => (
                       <button
                         key={i}
                         onClick={() => setBannerIdx(i)}
-                        className={`h-1.5 transition-all duration-300 rounded-full ${i === bannerIdx % allBanners.length ? "w-5 bg-white" : "w-1.5 bg-white/40"}`}
+                        className={`h-1 transition-all duration-300 rounded-full ${i === bannerIdx % allBanners.length ? "w-4 bg-white" : "w-1 bg-white/40"}`}
                       />
                     ))}
                   </div>
@@ -2669,200 +2628,160 @@ export default function App() {
               </div>
             )}
 
-            {/* أقسام التطبيق الرئيسية (أيقونات الأقسام في أعلى الصفحة) */}
-            <div className="px-3 pt-0.5" dir="rtl">
-              <div className="grid grid-cols-3 gap-2">
-                {/* 1. المتاجر والمطاعم */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    setTab("restaurants");
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800/80 rounded-2xl px-2 py-2.5 flex flex-row items-center justify-center gap-1.5 shadow-xs hover:shadow-md hover:border-emerald-200 dark:hover:border-slate-700 transition-all cursor-pointer group"
-                >
-                  <div className="w-7 h-7 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
-                    <ShoppingBag size={15} className="stroke-[2.5]" />
-                  </div>
-                  <span className="text-[11px] font-black text-slate-800 dark:text-white leading-tight truncate">
-                    المتاجر
-                  </span>
-                </motion.button>
+            {/* Featured Medical Complexes Semi-Transparent Horizontal Bar */}
+            {(() => {
+              const activeComplexes = medicalComplexes.filter((s) => s.isActive !== false && s.showInHome !== false);
+              if (activeComplexes.length === 0) return null;
+              return (
+                <div className="px-3" dir="rtl">
+                  <div className="bg-slate-100/70 dark:bg-slate-800/60 backdrop-blur-md border border-slate-200/60 dark:border-slate-700/50 rounded-2xl p-2 sm:p-2.5 shadow-xs flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <AutoHorizontalCarousel
+                        items={activeComplexes}
+                      intervalMs={3200}
+                      className="gap-2.5"
+                      renderItem={(store) => (
+                        <motion.div
+                          onClick={() => setSelectedStoreId(store.id)}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="w-16 sm:w-20 flex flex-col items-center gap-1.5 cursor-pointer group text-center"
+                        >
+                          {/* Compact Square Image */}
+                          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white dark:bg-slate-700 shadow-xs border border-slate-200/80 dark:border-slate-600/80 flex items-center justify-center shrink-0 relative group-hover:border-emerald-500 transition-colors">
+                            {store.logoImage || store.coverImage ? (
+                              <img
+                                src={store.logoImage || store.coverImage}
+                                alt={store.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white/90">
+                                <Hospital size={22} />
+                              </div>
+                            )}
+                          </div>
 
-                {/* 2. الدليل والخدمات */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    setTab("directory");
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800/80 rounded-2xl px-2 py-2.5 flex flex-row items-center justify-center gap-1.5 shadow-xs hover:shadow-md hover:border-emerald-200 dark:hover:border-slate-700 transition-all cursor-pointer group"
-                >
-                  <div className="w-7 h-7 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
-                    <BookOpen size={15} className="stroke-[2.5]" />
+                          {/* Store Name Under Image (Supports 2 Lines) */}
+                          <span className="font-display font-bold text-[10px] sm:text-[11px] text-slate-700 dark:text-slate-200 line-clamp-2 leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors w-full px-0.5 text-center">
+                            {store.name}
+                          </span>
+                        </motion.div>
+                      )}
+                    />
                   </div>
-                  <span className="text-[11px] font-black text-slate-800 dark:text-white leading-tight truncate">
-                    الدليل
-                  </span>
-                </motion.button>
 
-                {/* 3. العروض */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    setTab("offers");
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800/80 rounded-2xl px-2 py-2.5 flex flex-row items-center justify-center gap-1.5 shadow-xs hover:shadow-md hover:border-emerald-200 dark:hover:border-slate-700 transition-all cursor-pointer group"
-                >
-                  <div className="w-7 h-7 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
-                    <Tag size={15} className="stroke-[2.5]" />
-                  </div>
-                  <span className="text-[11px] font-black text-slate-800 dark:text-white leading-tight truncate">
-                    العروض
-                  </span>
-                </motion.button>
+                  {/* View All Button Side-by-Side in the same bar */}
+                  <button
+                    type="button"
+                    onClick={() => setSubTab("complexes")}
+                    className="h-14 sm:h-16 px-2.5 flex flex-col items-center justify-center gap-1 rounded-xl bg-white/80 dark:bg-slate-700/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-slate-200/80 dark:border-slate-600/70 hover:border-emerald-300 dark:hover:border-emerald-700/50 shadow-xs shrink-0 active:scale-95 transition-all cursor-pointer"
+                    title="عرض جميع المجمعات"
+                  >
+                    <ChevronLeft size={16} />
+                    <span className="text-[10px] font-black leading-none whitespace-nowrap">عرض الكل</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            );
+          })()}
 
-            <div className="px-3">
-              <div className="w-full h-[1.5px] bg-gradient-to-r from-transparent via-slate-200/80 dark:via-slate-700/60 to-transparent my-0.5" />
-            </div>
-
-            {/* البطاقات المميزة Section (إطار مخصص للهوية البصرية بدون عنوان) */}
-            <div className="px-3" dir="rtl">
-              <div className="p-2 sm:p-2.5 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 dark:from-emerald-950/40 dark:via-slate-800/80 dark:to-emerald-950/30 border border-emerald-500/20 dark:border-emerald-500/30 rounded-3xl shadow-xs relative overflow-hidden">
-                {dirList.length === 0 ? (
-                  <div className="bg-white/80 dark:bg-slate-800/80 rounded-2xl p-4 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
-                    لا توجد بطاقات مميزة حالياً
-                  </div>
-                ) : (
-                  <AutoHorizontalCarousel
-                    items={dirList}
-                    intervalMs={3000}
-                    renderItem={(item) => (
-                      <div
-                        onClick={() => {
-                          if (item.type === 'doctor') setSelectedDoctor(item.original);
-                          else if (item.type === 'taxi') setSelectedTaxi(item.original);
-                          else if (item.type === 'craftsman') setSelectedCraftsman(item.original);
-                          else if (item.type === 'store') setSelectedStoreId(item.id);
-                          else if (item.type === 'offer') setSelectedServiceOffer(item.original);
-                          else if (item.type === 'market_listing') setSelectedMarketListing(item.original);
-                        }}
-                        className="w-[105px] sm:w-[115px] h-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl p-1.5 flex flex-col items-center justify-between cursor-pointer group shadow-xs hover:shadow-md transition-all active:scale-95 relative"
-                      >
-                        <span className="absolute top-1 right-1 text-[7px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50 z-10">
-                          {item.typeLabel}
-                        </span>
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-slate-100 dark:bg-slate-900 overflow-hidden border-2 border-emerald-500/20 group-hover:border-emerald-500 flex items-center justify-center mt-2.5 mb-0.5 shrink-0 shadow-xs transition-all relative">
-                          {item.image ? (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                              referrerPolicy="no-referrer"
-                            />
-                          ) : (
-                            <div className="text-emerald-500">
-                              {item.type === 'doctor' ? <Stethoscope size={20} /> : item.type === 'taxi' ? <Car size={20} /> : item.type === 'craftsman' ? <Wrench size={20} /> : <ShoppingBag size={20} />}
-                            </div>
-                          )}
-                        </div>
-                        <h4 className="font-display font-bold text-[9px] sm:text-[10px] text-slate-800 dark:text-white line-clamp-2 text-center w-full leading-tight my-auto">
-                          {item.name}
-                        </h4>
-                      </div>
-                    )}
+            {/* Direct Doctors Section */}
+            <div className="px-3 space-y-2.5" dir="rtl">
+              {/* Search Bar with Specialty Selector beside it */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <SearchBar
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="ابحث عن طبيبك..."
+                    focusRingClass="focus:ring-emerald-500/20"
+                    className="mb-0"
                   />
-                )}
-              </div>
-            </div>
+                </div>
 
-            {/* سوق الشرقاط المفتوح Section */}
-            <div className="px-3 space-y-3" dir="rtl">
-              {/* Category Tab Bar (الكل | سيارات | عقارات | موبايلات) */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar" dir="rtl">
-                {[
-                  { id: "all", label: "الكل", icon: <LayoutGrid size={14} /> },
-                  { id: "سيارات", label: "سيارات", icon: <Car size={14} /> },
-                  { id: "عقارات", label: "عقارات", icon: <Home size={14} /> },
-                  { id: "موبايلات", label: "موبايلات", icon: <Smartphone size={14} /> },
-                ].map((item) => {
-                  const isActive = marketCategoryFilter === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setMarketCategoryFilter(item.id)}
-                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                        isActive
-                          ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20 scale-105"
-                          : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50"
-                      }`}
+                {/* Specialty Dropdown */}
+                <div className="relative shrink-0">
+                  <div className="relative">
+                    <select
+                      value={doctorCategoryFilter}
+                      onChange={(e) => setDoctorCategoryFilter(e.target.value)}
+                      className="h-12 pr-8 pl-3 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs cursor-pointer appearance-none text-right max-w-[130px] sm:max-w-[170px] truncate"
+                      title="تصفية حسب التخصص"
                     >
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
+                      {doctorSpecialties.map((spec) => (
+                        <option key={spec} value={spec} className="text-slate-800 dark:text-white bg-white dark:bg-slate-800">
+                          {spec === "الكل" ? "كل التخصصات" : spec}
+                        </option>
+                      ))}
+                    </select>
+                    <Filter
+                      size={15}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Grid Display for Market */}
-              {filteredMarketListings.length === 0 ? (
-                <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
-                  لا توجد عناصر حالياً في هذا القسم
+              {/* Doctors List */}
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <SkeletonCard key={i} />
+                  ))}
+                </div>
+              ) : filteredDoctors.length === 0 ? (
+                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
+                  لا يوجد أطباء مطابقين للبحث أو التخصص المحدد
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 pb-6">
-                  {filteredMarketListings.map((item, i) => (
+                <div className="space-y-2">
+                  {filteredDoctors.map((d, i) => (
                     <motion.div
-                      key={item.id}
-                      onClick={() => setSelectedMarketListing(item)}
-                      initial={{ opacity: 0, y: 8 }}
+                      key={d.id}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl p-2 flex flex-col justify-between cursor-pointer group shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden relative"
+                      transition={{ delay: i * 0.02 }}
+                      onClick={() => setSelectedDoctor(d)}
+                      whileHover={{ scale: 1.008 }}
+                      whileTap={{ scale: 0.985 }}
+                      className="w-full bg-white dark:bg-slate-800/90 rounded-2xl p-2.5 sm:p-3 flex gap-3 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:shadow-xs transition-all duration-200 cursor-pointer text-right"
                     >
-                      <div>
-                        {/* Image Container */}
-                        <div className="relative mb-2 w-full overflow-hidden rounded-xl">
-                          <AnimatedCardImages
-                            images={item.images}
-                            fallbackImage={item.image}
-                            title={item.title}
-                            heightClass="h-28 sm:h-32"
-                            roundedClass="rounded-xl"
+                      {/* Image */}
+                      <div className="w-14 h-14 sm:w-15 sm:h-15 rounded-xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden shrink-0 flex items-center justify-center relative border border-slate-100 dark:border-slate-700">
+                        {d.image ? (
+                          <img
+                            src={d.image}
+                            className="w-full h-full object-cover"
+                            alt={d.name}
+                            referrerPolicy="no-referrer"
                           />
-                        </div>
-
-                        {/* Title */}
-                        <h4 className="font-display font-semibold text-xs text-slate-800 dark:text-white line-clamp-2 text-right mb-2 min-h-[32px] leading-snug">
-                          {item.title}
-                        </h4>
+                        ) : (
+                          <Stethoscope size={24} className="text-emerald-500/80" />
+                        )}
                       </div>
 
-                      {/* Bottom section with price and details */}
-                      <div className="border-t border-slate-100 dark:border-slate-700/50 pt-2 mt-0.5 flex items-center justify-between w-full">
-                        {/* Price Badge */}
-                        {item.price ? (
-                          <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded-lg font-black">
-                            {item.price}
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 dark:text-slate-600 text-[9px] font-bold">غير محدد</span>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <h3 className="font-display font-black text-xs sm:text-sm text-slate-800 dark:text-white truncate">
+                          {d.name}
+                        </h3>
+                        {d.subtitle && (
+                          <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
+                            {d.subtitle}
+                          </p>
                         )}
 
-                        {/* View Details Link */}
-                        <div className="flex items-center gap-0.5 text-slate-400 dark:text-slate-500 font-bold text-[11px] transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
-                          <span className="transition-transform group-hover:-translate-x-0.5 duration-300">←</span>
-                          <span>التفاصيل</span>
-                        </div>
+                        {/* Reservation Phone */}
+                        {d.reservationPhone && (
+                          <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                            📞 الحجز: {d.reservationPhone}
+                          </p>
+                        )}
                       </div>
+
+                      <ChevronLeft size={16} className="text-slate-300 dark:text-slate-600 shrink-0" />
                     </motion.div>
                   ))}
                 </div>
@@ -3002,11 +2921,6 @@ export default function App() {
                                     🚗 {t.carType}
                                   </span>
                                 )}
-                                {t.location && (
-                                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold truncate max-w-[100px]" title={t.location}>
-                                    📍 {t.location}
-                                  </span>
-                                )}
                               </div>
                             </div>
                           </div>
@@ -3019,53 +2933,52 @@ export default function App() {
 
               {subTab === "restaurants" && (
                 <div className="space-y-4 animate-in fade-in duration-300" dir="rtl">
-                  <div className="relative">
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-base">🔍</span>
-                    <input
-                      type="text"
-                      placeholder="أبحث عن متجر، مطعم، كوافير، محل..."
-                      value={restaurantSearch}
-                      onChange={e => setRestaurantSearch(e.target.value)}
-                      className="w-full h-12 pr-11 pl-10 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs text-right"
-                    />
-                    {restaurantSearch && (
-                      <button
-                        onClick={() => setRestaurantSearch('')}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors text-xs"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Market Categories Bar */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                    {["الكل", "مأكولات", "متاجر", "نسائي"].map((cat) => {
-                      const isActive = restaurantCategoryFilter === cat;
-                      return (
+                  {/* Search Bar & Category Select Box */}
+                  <div className="flex items-center gap-2" dir="rtl">
+                    <div className="relative flex-1">
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm">🔍</span>
+                      <input
+                        type="text"
+                        placeholder="أبحث عن..."
+                        value={restaurantSearch}
+                        onChange={e => setRestaurantSearch(e.target.value)}
+                        className="w-full h-11 pr-10 pl-9 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs text-right"
+                      />
+                      {restaurantSearch && (
                         <button
-                          key={cat}
-                          onClick={() => setRestaurantCategoryFilter(cat)}
-                          className={`px-4 py-2 rounded-2xl text-xs font-black transition-all shrink-0 cursor-pointer ${
-                            isActive
-                              ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20"
-                              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                          }`}
+                          onClick={() => setRestaurantSearch('')}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors text-[10px]"
                         >
-                          {cat}
+                          ✕
                         </button>
-                      );
-                    })}
+                      )}
+                    </div>
+
+                    <div className="relative shrink-0">
+                      <select
+                        value={selectedStoreCategoryTab}
+                        onChange={(e) => setSelectedStoreCategoryTab(e.target.value)}
+                        className="h-11 px-5 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-black text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs appearance-none cursor-pointer text-center pr-4.5 pl-9 min-w-[130px] sm:min-w-[150px]"
+                      >
+                        <option value="الكل">الكل</option>
+                        <option value="مطاعم">مطاعم</option>
+                        <option value="متاجر">متاجر</option>
+                        <option value="مكاتب">مكاتب</option>
+                      </select>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]">
+                        ▼
+                      </span>
+                    </div>
                   </div>
 
                   {isLoading ? (
                     <div className="space-y-3">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="w-full bg-white dark:bg-slate-800 rounded-3xl p-4 flex gap-4 items-center border border-slate-100 dark:border-slate-800 animate-pulse">
-                          <div className="w-20 h-20 rounded-2xl bg-slate-200 dark:bg-slate-700 shrink-0" />
+                          <div className="w-24 h-24 rounded-2xl bg-slate-200 dark:bg-slate-700 shrink-0" />
                           <div className="flex-1 space-y-3">
                             <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-full w-1/3" />
-                            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full w-2/2" />
+                            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full w-2/3" />
                           </div>
                         </div>
                       ))}
@@ -3074,26 +2987,23 @@ export default function App() {
                     const filteredMarketStores = marketStores.filter((s) => {
                       if (!s.isActive) return false;
 
-                      // Category Filter Match
-                      let matchesCategory = true;
-                      if (restaurantCategoryFilter !== "الكل") {
-                        matchesCategory = getStoreClassification(s) === restaurantCategoryFilter;
+                      // Category tab filter
+                      if (selectedStoreCategoryTab !== "الكل" && getStoreClassification(s) !== selectedStoreCategoryTab) {
+                        return false;
                       }
 
                       // Search text filter
                       const q = restaurantSearch.toLowerCase().trim();
-                      const matchesSearch = !q || 
+                      return !q || 
                         s.name.toLowerCase().includes(q) ||
                         (s.description && s.description.toLowerCase().includes(q)) ||
                         (s.location && s.location.toLowerCase().includes(q));
-
-                      return matchesCategory && matchesSearch;
                     });
 
                     if (filteredMarketStores.length === 0) {
                       return (
                         <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
-                          لا توجد نتائج مطابقة لتصنيف {restaurantCategoryFilter} في السوق
+                          لا توجد نتائج مطابقة في السوق
                         </div>
                       );
                     }
@@ -3106,37 +3016,34 @@ export default function App() {
                             onClick={() => setSelectedStoreId(store.id)}
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.98 }}
-                            className="w-full bg-white dark:bg-slate-800 rounded-3xl p-3 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/40 hover:shadow-md transition-all duration-200 cursor-pointer"
+                            className="w-full bg-white dark:bg-slate-800/90 rounded-3xl p-3 sm:p-3.5 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:shadow-md transition-all duration-200 cursor-pointer group text-right relative overflow-hidden"
                             dir="rtl"
                           >
-                            <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden shrink-0 flex items-center justify-center relative border border-slate-100 dark:border-slate-700">
-                              {store.logoImage ? (
+                            {/* Square Image Container Aligned Right */}
+                            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden flex items-center justify-center shrink-0 border border-slate-100 dark:border-slate-700 relative">
+                              {store.logoImage || store.coverImage ? (
                                 <img
-                                  src={store.logoImage}
-                                  className="w-full h-full object-cover"
+                                  src={store.logoImage || store.coverImage}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                   alt={store.name}
                                   referrerPolicy="no-referrer"
                                 />
                               ) : (
-                                <ShoppingBag size={26} className="text-emerald-500/80" />
+                                <ShoppingBag size={28} className="text-emerald-500/80" />
                               )}
                             </div>
 
-                            <div className="flex-1 min-w-0 flex flex-col justify-center text-right">
-                              <h3 className="font-display font-black text-sm text-slate-800 dark:text-white truncate">
+                            {/* Details Card Adjacent on the Left (Title and Description only) */}
+                            <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5 text-right">
+                              <h3 className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white truncate">
                                 {store.name}
                               </h3>
-                              <div className="flex items-center gap-1.5 mt-1">
-                                {store.location && (
-                                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 dark:text-slate-500">
-                                    <span>📍</span>
-                                    <span className="truncate">{store.location}</span>
-                                  </div>
-                                )}
-                              </div>
+                              {store.description && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2 leading-relaxed mt-1">
+                                  {store.description}
+                                </p>
+                              )}
                             </div>
-
-                            <ChevronLeft size={18} className="text-slate-300 dark:text-slate-655 shrink-0" />
                           </motion.div>
                         ))}
                       </div>
@@ -3145,76 +3052,83 @@ export default function App() {
                 </div>
               )}
 
-              {subTab === "craftsmen" && (
+
+
+              {subTab === "complexes" && (
                 <div className="space-y-4 animate-in fade-in duration-300" dir="rtl">
+                  {/* Search Bar */}
                   <SearchBar
-                    value={craftsmanSearch}
-                    onChange={setCraftsmanSearch}
-                    placeholder="أبحث عن اسم الأسطى أو المهنة..."
+                    value={storeSearchText}
+                    onChange={setStoreSearchText}
+                    placeholder="ابحث عن اسم المجمع أو المركز أو موقعه..."
                     focusRingClass="focus:ring-emerald-500/20"
                   />
 
-                  {isLoading ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3].map((i) => (
-                        <SkeletonCard key={i} />
-                      ))}
-                    </div>
-                  ) : filteredCraftsmen.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
-                      لا يوجد أسطوات مطبقين للبحث
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-3">
-                      {filteredCraftsmen.map((c, i) => (
-                        <motion.div
-                          key={c.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.03 }}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                          onClick={() => setSelectedCraftsman(c)}
-                          className="w-full bg-white dark:bg-slate-800 rounded-3xl p-3 flex items-center justify-between gap-4 border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/40 hover:shadow-md transition-all duration-200 cursor-pointer group text-right relative overflow-hidden"
-                          dir="rtl"
-                        >
-                          <div className="flex items-center gap-1 shrink-0">
-                            <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 group-hover:translate-x-[-2px] transition-transform">
-                              التفاصيل
-                            </span>
-                            <ChevronLeft size={18} className="text-emerald-500 shrink-0" />
-                          </div>
+                  {/* Complexes List */}
+                  {(() => {
+                    const complexesSource = medicalComplexes.length > 0 ? medicalComplexes : marketStores;
+                    const filteredComplexes = complexesSource.filter((store) => {
+                      if (!store.isActive) return false;
+                      const q = storeSearchText.toLowerCase().trim();
+                      return (
+                        !q ||
+                        store.name.toLowerCase().includes(q) ||
+                        (store.description && store.description.toLowerCase().includes(q)) ||
+                        (store.location && store.location.toLowerCase().includes(q))
+                      );
+                    });
 
-                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                            <div className="flex-1 min-w-0 text-right">
-                              <h3 className="font-display font-black text-sm text-slate-800 dark:text-white truncate">
-                                {c.name}
-                              </h3>
-                              <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-slate-400 dark:text-slate-500">
-                                <span>🛠️</span>
-                                <span className="truncate">
-                                  {c.craft || c.category || "أسطى / فني"}
-                                </span>
-                              </div>
-                            </div>
+                    if (filteredComplexes.length === 0) {
+                      return (
+                        <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
+                          لا توجد مجمعات أو مراكز طبية مطابقة للبحث
+                        </div>
+                      );
+                    }
 
-                            <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden shrink-0 flex items-center justify-center relative border border-slate-100 dark:border-slate-700">
-                              {c.image ? (
+                    return (
+                      <div className="space-y-3 pb-8">
+                        {filteredComplexes.map((store) => (
+                          <motion.div
+                            key={store.id}
+                            onClick={() => setSelectedStoreId(store.id)}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="w-full bg-white dark:bg-slate-800/90 rounded-3xl p-3 sm:p-4 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:shadow-md transition-all duration-200 cursor-pointer group text-right relative overflow-hidden"
+                          >
+                            {/* Square Image */}
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden flex items-center justify-center shrink-0 border border-slate-100 dark:border-slate-700 relative">
+                              {store.logoImage || store.coverImage ? (
                                 <img
-                                  src={c.image}
-                                  className="w-full h-full object-cover"
-                                  alt={c.name}
+                                  src={store.logoImage || store.coverImage}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  alt={store.name}
                                   referrerPolicy="no-referrer"
                                 />
                               ) : (
-                                <Wrench size={26} className="text-emerald-500/80" />
+                                <Hospital size={28} className="text-emerald-500/80" />
                               )}
                             </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
+
+                            {/* Details */}
+                            <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+                              <h3 className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white truncate">
+                                {store.name}
+                              </h3>
+                              {store.location && (
+                                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold mt-1 flex items-center gap-1">
+                                  <MapPin size={12} className="text-emerald-500 shrink-0" />
+                                  <span className="truncate">{store.location}</span>
+                                </p>
+                              )}
+                            </div>
+
+                            <ChevronLeft size={18} className="text-slate-300 dark:text-slate-600 shrink-0" />
+                          </motion.div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -3226,302 +3140,335 @@ export default function App() {
     );
   };
 
-  const renderDirectoryTab = () => {
+  const renderDoctorsTab = () => {
     return (
-      <div className="space-y-4 pt-3 pb-20 px-3 animate-in fade-in duration-500 font-sans" dir="rtl">
+      <div className="space-y-4 pt-3 pb-20 px-3 animate-in fade-in duration-300 font-sans" dir="rtl">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-50 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 -mx-3 px-4 mb-2 shadow-xs space-y-3">
-          <div className="flex justify-between items-center gap-3">
-            {/* Back Button to Home */}
-            <button
-              onClick={() => {
-                setTab("home");
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
-              title="الرجوع للرئيسية"
-            >
-              <ChevronRight size={20} />
-            </button>
+        <div className="sticky top-0 z-50 flex items-center justify-between py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 -mx-3 px-4 mb-2 shadow-xs">
+          <button
+            onClick={() => {
+              setTab("home");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
+            title="الرجوع للرئيسية"
+          >
+            <ChevronRight size={20} />
+          </button>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
-                <BookOpen size={18} />
-              </div>
-              <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
-                دليل الشرقاط
-              </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
+              <Stethoscope size={18} />
             </div>
-
-            <div className="w-10 h-10" />
+            <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
+              الأطباء والعيادات
+            </span>
           </div>
 
-          {/* Directory Sub-Tabs Selector */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
-            <button
-              onClick={() => setDirectorySubTab("doctors")}
-              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                directorySubTab === "doctors"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
+          <div className="w-9 h-9" />
+        </div>
+
+        {/* Search Bar */}
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="ابحث عن طبيب أو عيادة أو تخصص..."
+          focusRingClass="focus:ring-emerald-500/20"
+        />
+
+        {/* Doctor List */}
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : filteredDoctors.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
+            لا يوجد أطباء مطابقين للبحث
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredDoctors.map((d, i) => (
+              <motion.div
+                key={d.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+                onClick={() => setSelectedDoctor(d)}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-white dark:bg-slate-800 rounded-3xl p-3 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/40 hover:shadow-md transition-all duration-200 cursor-pointer"
+                dir="rtl"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden shrink-0 flex items-center justify-center relative border border-slate-100 dark:border-slate-700">
+                  {d.image ? (
+                    <img
+                      src={d.image}
+                      className="w-full h-full object-cover"
+                      alt={d.name}
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <Stethoscope size={26} className="text-emerald-500/80" />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0 flex flex-col justify-center text-right">
+                  <h3 className="font-display font-black text-sm text-slate-800 dark:text-white truncate">
+                    {d.name}
+                  </h3>
+                  {d.subtitle && (
+                    <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+                      <span>👨‍⚕️</span>
+                      <span className="truncate">{d.subtitle}</span>
+                    </div>
+                  )}
+                </div>
+
+                <ChevronLeft size={18} className="text-slate-300 dark:text-slate-600 shrink-0" />
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderServicesTab = () => {
+    return renderDirectoryTab();
+  };
+
+  const renderDirectoryTab = () => {
+    const activeOffers = (serviceOffers || []).filter(
+      (o) => o.isActive !== false && o.title && o.title.trim() !== "",
+    );
+
+    const activeStores = marketStores.filter(
+      (s) => s.isActive !== false && s.name && s.name.trim() !== "",
+    );
+
+    const filteredStores = activeStores.filter((s) => {
+      if (restaurantCategoryFilter !== "الكل" && getStoreClassification(s) !== restaurantCategoryFilter) {
+        return false;
+      }
+      const q = (storeSearchText || "").toLowerCase().trim();
+      return (
+        !q ||
+        (s.name && s.name.toLowerCase().includes(q)) ||
+        (s.description && s.description.toLowerCase().includes(q)) ||
+        (s.location && s.location.toLowerCase().includes(q)) ||
+        (s.category && s.category.toLowerCase().includes(q))
+      );
+    });
+
+    const currentOffer =
+      activeOffers.length > 0
+        ? activeOffers[offerBannerIdx % activeOffers.length]
+        : null;
+
+    return (
+      <div
+        className="space-y-4 pt-3 pb-24 px-3 animate-in fade-in duration-300 font-sans text-right"
+        dir="rtl"
+      >
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-50 flex items-center justify-between py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 -mx-3 px-4 mb-1 shadow-xs">
+          <button
+            onClick={() => {
+              setTab("home");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
+            title="الرجوع للرئيسية"
+          >
+            <ChevronRight size={20} />
+          </button>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
+              <BookOpen size={18} />
+            </div>
+            <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
+              دليل الشرقاط
+            </span>
+          </div>
+
+          <div className="w-9 h-9" />
+        </div>
+
+        {/* 1. ANIMATED OFFERS BANNER (بنر متحرك للعروض لاستغلال المساحة) */}
+        {activeOffers.length > 0 && currentOffer && (
+          <div className="relative w-full aspect-[16/7] sm:aspect-[21/8] max-h-[220px] overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm group">
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                key={currentOffer.id}
+                initial={{ x: "100%", opacity: 1 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: "-100%", opacity: 1 }}
+                transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
+                onClick={() => setSelectedServiceOffer(currentOffer)}
+                className="absolute inset-0 w-full h-full cursor-pointer select-none"
+              >
+                {currentOffer.image ? (
+                  <img
+                    src={currentOffer.image}
+                    className="w-full h-full object-cover"
+                    alt={currentOffer.title}
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-emerald-600 via-teal-700 to-amber-600" />
+                )}
+
+                {/* Dark Gradient Overlay for optimal legibility */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-between p-3.5 sm:p-4 text-right"
+                  dir="rtl"
+                >
+                  {/* Top Price Badge */}
+                  <div className="flex items-center justify-start gap-2">
+                    {currentOffer.price && (
+                      <span className="px-2.5 py-1 bg-amber-500/95 backdrop-blur-md text-white font-black text-[10px] sm:text-xs rounded-xl shadow-xs">
+                        {currentOffer.price}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Bottom Title Only */}
+                  <div className="mt-auto">
+                    <h3 className="text-xs sm:text-base font-display font-black text-white line-clamp-1 drop-shadow-sm">
+                      {currentOffer.title}
+                    </h3>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Banner Dots Indicators */}
+            {activeOffers.length > 1 && (
+              <div className="absolute bottom-2.5 left-3 flex items-center gap-1 bg-black/35 backdrop-blur-md px-2 py-1 rounded-full z-10">
+                {activeOffers.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOfferBannerIdx(i);
+                    }}
+                    className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${
+                      i === offerBannerIdx % activeOffers.length
+                        ? "w-4 bg-white"
+                        : "w-1.5 bg-white/40 hover:bg-white/70"
+                    }`}
+                    aria-label={`عرض ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 2. SEARCH BAR & CATEGORY SELECT FOR RESTAURANTS */}
+        <div className="flex items-center gap-2" dir="rtl">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm">
+              🔍
+            </span>
+            <input
+              type="text"
+              placeholder="أبحث عن..."
+              value={storeSearchText}
+              onChange={(e) => setStoreSearchText(e.target.value)}
+              className="w-full h-11 pr-10 pl-9 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs text-right"
+            />
+            {storeSearchText && (
+              <button
+                onClick={() => setStoreSearchText("")}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors text-[10px]"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Category Dropdown Box (مقابل شريط البحث) */}
+          <div className="relative shrink-0">
+            <select
+              value={restaurantCategoryFilter}
+              onChange={(e) => setRestaurantCategoryFilter(e.target.value)}
+              className="h-11 px-5 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-black text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs appearance-none cursor-pointer text-center pr-4.5 pl-9 min-w-[130px] sm:min-w-[150px]"
             >
-              <Stethoscope size={15} />
-              <span>الأطباء</span>
-            </button>
-            <button
-              onClick={() => setDirectorySubTab("cars")}
-              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                directorySubTab === "cars"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Car size={15} />
-              <span>التكسي</span>
-            </button>
-            <button
-              onClick={() => setDirectorySubTab("craftsmen")}
-              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                directorySubTab === "craftsmen"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Wrench size={15} />
-              <span>الأسطوات</span>
-            </button>
+              <option value="الكل">الكل</option>
+              <option value="مطاعم">مطاعم</option>
+              <option value="متاجر">متاجر</option>
+              <option value="مكاتب">مكاتب</option>
+            </select>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]">
+              ▼
+            </span>
           </div>
         </div>
 
-        {/* Directory Sub-Tab Content */}
-        {directorySubTab === "doctors" && (
-          <div className="space-y-4 animate-in fade-in duration-300">
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder="ابحث عن طبيب أو عيادة أو تخصص..."
-              focusRingClass="focus:ring-emerald-500/20"
-            />
-
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <SkeletonCard key={i} />
-                ))}
-              </div>
-            ) : filteredDoctors.length === 0 ? (
-              <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
-                لا يوجد أطباء مطابقين للبحث
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredDoctors.map((d, i) => (
-                  <motion.div
-                    key={d.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    onClick={() => setSelectedDoctor(d)}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full bg-white dark:bg-slate-800 rounded-3xl p-3 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/40 hover:shadow-md transition-all duration-200 cursor-pointer"
-                    dir="rtl"
-                  >
-                    <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden shrink-0 flex items-center justify-center relative border border-slate-100 dark:border-slate-700">
-                      {d.image ? (
-                        <img
-                          src={d.image}
-                          className="w-full h-full object-cover"
-                          alt={d.name}
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <Stethoscope size={26} className="text-emerald-500/80" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0 flex flex-col justify-center text-right">
-                      <h3 className="font-display font-black text-sm text-slate-800 dark:text-white truncate">
-                        {d.name}
-                      </h3>
-                      {d.subtitle && (
-                        <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-slate-400 dark:text-slate-500">
-                          <span>👨‍⚕️</span>
-                          <span className="truncate">{d.subtitle}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <ChevronLeft size={18} className="text-slate-300 dark:text-slate-600 shrink-0" />
-                  </motion.div>
-                ))}
-              </div>
-            )}
+        {/* 3. 2-COLUMN GRID OF RESTAURANTS (المطاعم بشكل شبكة ثنائية) */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-slate-800 rounded-2xl sm:rounded-3xl h-44 animate-pulse border border-slate-100 dark:border-slate-800"
+              />
+            ))}
           </div>
-        )}
-
-        {directorySubTab === "cars" && (
-          <div className="space-y-4 animate-in fade-in duration-300" dir="rtl">
-            <SearchBar
-              value={taxiSearch}
-              onChange={setTaxiSearch}
-              placeholder="أبحث عن سائق التكسي..."
-              focusRingClass="focus:ring-emerald-500/20"
-            />
-
-            {/* Taxi Categories Bar */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {["خصوصي", "دليفري", "ستاركس", "حمل"].map((cat) => {
-                const isActive = taxiCategoryFilter === cat;
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setTaxiCategoryFilter(cat)}
-                    className={`px-4 py-2 rounded-2xl text-xs font-black transition-all shrink-0 cursor-pointer ${
-                      isActive
-                        ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20"
-                        : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
-            </div>
-
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-full bg-white dark:bg-slate-800 rounded-3xl p-4 flex gap-4 items-center border border-slate-100 dark:border-slate-800 animate-pulse">
-                    <div className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-slate-700 shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-full w-1/3" />
-                      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full w-2/3" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredTaxis.length === 0 ? (
-              <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
-                لا توجد نتائج مطابقة لتصنيف {taxiCategoryFilter}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredTaxis.map((t, i) => (
-                  <motion.div
-                    key={t.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    onClick={() => setSelectedTaxi(t)}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full bg-white dark:bg-slate-800 rounded-3xl p-3 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/40 hover:shadow-md transition-all duration-200 cursor-pointer"
-                    dir="rtl"
-                  >
-                    <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden shrink-0 flex items-center justify-center relative border border-slate-100 dark:border-slate-700">
-                      {t.image ? (
-                        <img
-                          src={t.image}
-                          className="w-full h-full object-cover"
-                          alt={t.name}
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <Car size={26} className="text-emerald-500/80" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0 flex flex-col justify-center text-right">
-                      <h3 className="font-display font-black text-sm text-slate-800 dark:text-white truncate">
-                        {t.name}
-                      </h3>
-                      <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-slate-400 dark:text-slate-500">
-                        <span>🚕</span>
-                        <span className="truncate">
-                          {t.carType || t.category || "تكسي"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <ChevronLeft size={18} className="text-slate-300 dark:text-slate-600 shrink-0" />
-                  </motion.div>
-                ))}
-              </div>
-            )}
+        ) : filteredStores.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
+            لا توجد مطاعم أو محلات مطابقة للبحث
           </div>
-        )}
-
-        {directorySubTab === "craftsmen" && (
-          <div className="space-y-4 animate-in fade-in duration-300" dir="rtl">
-            <SearchBar
-              value={craftsmanSearch}
-              onChange={setCraftsmanSearch}
-              placeholder="أبحث عن اسم الأسطى أو المهنة..."
-              focusRingClass="focus:ring-emerald-500/20"
-            />
-
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-full bg-white dark:bg-slate-800 rounded-3xl p-4 flex gap-4 items-center border border-slate-100 dark:border-slate-800 animate-pulse">
-                    <div className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-slate-700 shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-full w-1/3" />
-                      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full w-2/3" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredCraftsmen.length === 0 ? (
-              <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
-                لا يوجد أسطوات مطبقين للبحث
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredCraftsmen.map((c, i) => (
-                  <motion.div
-                    key={c.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    onClick={() => setSelectedCraftsman(c)}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full bg-white dark:bg-slate-800 rounded-3xl p-3 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/40 hover:shadow-md transition-all duration-200 cursor-pointer"
-                    dir="rtl"
-                  >
-                    <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden shrink-0 flex items-center justify-center relative border border-slate-100 dark:border-slate-700">
-                      {c.image ? (
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 pb-8">
+            {filteredStores.map((store, i) => (
+              <motion.div
+                key={store.id}
+                onClick={() => setSelectedStoreId(store.id)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.02 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="bg-white dark:bg-slate-800 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex flex-col justify-between group p-2 sm:p-2.5 shadow-xs text-right"
+              >
+                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  <div>
+                    {/* Restaurant Image Container */}
+                    <div className="relative w-full aspect-[4/3] rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-900 overflow-hidden mb-2 border border-slate-100 dark:border-slate-800 flex items-center justify-center">
+                      {store.logoImage || store.coverImage ? (
                         <img
-                          src={c.image}
-                          className="w-full h-full object-cover"
-                          alt={c.name}
+                          src={store.logoImage || store.coverImage}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          alt={store.name}
                           referrerPolicy="no-referrer"
                         />
                       ) : (
-                        <Wrench size={26} className="text-emerald-500/80" />
+                        <Utensils size={24} className="text-emerald-500/80" />
                       )}
                     </div>
 
-                    <div className="flex-1 min-w-0 flex flex-col justify-center text-right">
-                      <h3 className="font-display font-black text-sm text-slate-800 dark:text-white truncate">
-                        {c.name}
-                      </h3>
-                      <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-slate-400 dark:text-slate-500">
-                        <span>🛠️</span>
-                        <span className="truncate">
-                          {c.craft || c.category || "أسطى / فني"}
-                        </span>
-                      </div>
-                    </div>
+                    {/* Restaurant Title */}
+                    <h4 className="font-display font-black text-xs sm:text-sm text-slate-800 dark:text-white truncate">
+                      {store.name}
+                    </h4>
+                  </div>
 
-                    <ChevronLeft size={18} className="text-slate-300 dark:text-slate-600 shrink-0" />
-                  </motion.div>
-                ))}
-              </div>
-            )}
+                  {/* Location / Address Footer (No description on card) */}
+                  {store.location && (
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-semibold truncate mt-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
+                      <span>📍</span>
+                      <span className="truncate">{store.location}</span>
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            ))}
           </div>
         )}
       </div>
@@ -3531,17 +3478,26 @@ export default function App() {
   const renderRestaurantsTab = () => {
     const activeStores = marketStores.filter((s) => s.isActive !== false && s.name && s.name.trim() !== "");
 
+    const filteredStores = activeStores.filter((s) => {
+      const q = storeSearchText.toLowerCase().trim();
+      return (
+        !q ||
+        s.name.toLowerCase().includes(q) ||
+        (s.description && s.description.toLowerCase().includes(q)) ||
+        (s.location && s.location.toLowerCase().includes(q))
+      );
+    });
+
     return (
       <div className="space-y-4 pt-3 pb-20 px-3 animate-in fade-in duration-300 font-sans text-right" dir="rtl">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-50 flex justify-between items-center gap-3 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 -mx-3 px-4 mb-2 shadow-xs">
-          {/* Back Button to Home */}
+        <div className="sticky top-0 z-50 flex items-center justify-between py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 -mx-3 px-4 mb-2 shadow-xs">
           <button
             onClick={() => {
               setTab("home");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
+            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
             title="الرجوع للرئيسية"
           >
             <ChevronRight size={20} />
@@ -3549,22 +3505,22 @@ export default function App() {
 
           <div className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
-              <ShoppingBag size={18} />
+              <Hospital size={18} />
             </div>
             <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
-              المتاجر والمطاعم
+              المجمعات الطبية
             </span>
           </div>
 
-          <div className="w-10 h-10" />
+          <div className="w-9 h-9" />
         </div>
 
-        {/* Search Input for Stores */}
+        {/* Search Input for Complexes */}
         <div className="relative">
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-base">🔍</span>
           <input
             type="text"
-            placeholder="أبحث عن متجر أو محل..."
+            placeholder="ابحث عن اسم المجمع الطبي أو عنوانه..."
             value={storeSearchText}
             onChange={(e) => setStoreSearchText(e.target.value)}
             className="w-full h-12 pr-11 pl-10 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs text-right"
@@ -3579,93 +3535,63 @@ export default function App() {
           )}
         </div>
 
-        {/* Category Tab Bar (الكل | محل | مطعم | مكتب) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar" dir="rtl">
-          {[
-            { id: "الكل", label: "الكل", icon: <LayoutGrid size={14} /> },
-            { id: "محل", label: "محل", icon: <ShoppingBag size={14} /> },
-            { id: "مطعم", label: "مطعم", icon: <Utensils size={14} /> },
-            { id: "مكتب", label: "مكتب", icon: <Briefcase size={14} /> },
-          ].map((tab) => {
-            const isActive = restaurantCategoryFilter === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setRestaurantCategoryFilter(tab.id)}
-                className={`px-4 py-2 rounded-2xl text-xs font-black transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                  isActive
-                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20 scale-105"
-                    : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                }`}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
         {/* List of Stores */}
-        {activeStores.filter((s) => {
-          const q = storeSearchText.toLowerCase().trim();
-          const matchesSearch = !q ||
-            s.name.toLowerCase().includes(q) ||
-            (s.description && s.description.toLowerCase().includes(q)) ||
-            (s.category && s.category.toLowerCase().includes(q));
-
-          if (!matchesSearch) return false;
-          if (restaurantCategoryFilter !== "الكل") {
-            return getStoreClassification(s) === restaurantCategoryFilter;
-          }
-          return true;
-        }).length === 0 ? (
+        {filteredStores.length === 0 ? (
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
-            لا توجد محلات أو متاجر مطابقة
+            لا توجد مجمعات طبية مطابقة للبحث
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 pb-8">
-            {activeStores.filter((s) => {
-              const q = storeSearchText.toLowerCase().trim();
-              const matchesSearch = !q ||
-                s.name.toLowerCase().includes(q) ||
-                (s.description && s.description.toLowerCase().includes(q)) ||
-                (s.category && s.category.toLowerCase().includes(q));
+          <div className="space-y-3 pb-8">
+            {filteredStores.map((store) => {
+              const linkedDoctorsCount = doctors.filter((doc) => doc.complexId === store.id).length;
 
-              if (!matchesSearch) return false;
-              if (restaurantCategoryFilter !== "الكل") {
-                return getStoreClassification(s) === restaurantCategoryFilter;
-              }
-              return true;
-            }).map((store) => (
-              <motion.div
-                key={store.id}
-                onClick={() => {
-                  setSelectedStoreId(store.id);
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="bg-white dark:bg-slate-800 rounded-3xl p-3 flex flex-col justify-between border border-slate-100 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:shadow-md transition-all duration-200 cursor-pointer group overflow-hidden"
-              >
-                <div className="w-full h-28 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden flex items-center justify-center relative border border-slate-100 dark:border-slate-700/60 mb-2.5">
-                  {store.logoImage || store.coverImage ? (
-                    <img
-                      src={store.logoImage || store.coverImage}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      alt={store.name}
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <ShoppingBag size={32} className="text-emerald-500/80" />
-                  )}
-                </div>
-                <h4 className="font-display font-black text-xs text-slate-800 dark:text-white line-clamp-1 text-center leading-tight">
-                  {store.name}
-                </h4>
-                <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 text-center truncate mt-0.5">
-                  {store.category || "متجر"}
-                </p>
-              </motion.div>
-            ))}
+              return (
+                <motion.div
+                  key={store.id}
+                  onClick={() => {
+                    setSelectedStoreId(store.id);
+                  }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full bg-white dark:bg-slate-800/90 rounded-3xl p-3 sm:p-4 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:shadow-md transition-all duration-200 cursor-pointer group text-right relative overflow-hidden"
+                >
+                  {/* Square Image Container Aligned Right */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden flex items-center justify-center shrink-0 border border-slate-100 dark:border-slate-700 relative">
+                    {store.logoImage || store.coverImage ? (
+                      <img
+                        src={store.logoImage || store.coverImage}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        alt={store.name}
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <Hospital size={28} className="text-emerald-500/80" />
+                    )}
+                  </div>
+
+                  {/* Details Card Adjacent on the Left */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5 text-right">
+                    <h4 className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white truncate">
+                      {store.name}
+                    </h4>
+                    {store.description && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-1 leading-relaxed mt-0.5">
+                        {store.description}
+                      </p>
+                    )}
+
+                    {/* Location */}
+                    {store.location && (
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1 flex items-center gap-1">
+                        📍 العنوان: {store.location}
+                      </p>
+                    )}
+                  </div>
+
+                  <ChevronLeft size={18} className="text-slate-300 dark:text-slate-600 shrink-0" />
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -3674,34 +3600,148 @@ export default function App() {
 
   const renderOffersTab = () => {
     return (
-      <div className="space-y-4 pt-3 pb-20 px-3 animate-in fade-in duration-500 font-sans" dir="rtl">
+      <div className="space-y-4 pt-3 pb-20 px-3 animate-in fade-in duration-500 font-sans text-right" dir="rtl">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-50 flex justify-between items-center gap-3 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 -mx-3 px-4 mb-2 shadow-xs">
-          {/* Back Button to Home */}
+        <div className="sticky top-0 z-50 flex items-center justify-between py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 -mx-3 px-4 mb-2 shadow-xs">
           <button
+            type="button"
             onClick={() => {
               setTab("home");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
+            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
             title="الرجوع للرئيسية"
           >
             <ChevronRight size={20} />
           </button>
 
           <div className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <Tag size={18} />
             </div>
             <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
-              عروض الشرقاط
+              إعلانات وعروض
             </span>
           </div>
 
-          <div className="w-10 h-10" />
+          <div className="w-9 h-9" />
         </div>
 
-        {renderServiceOffersContent(false)}
+        {/* Offers Cards List */}
+        {renderServiceOffersContent(true)}
+      </div>
+    );
+  };
+
+  const renderEventsTab = () => {
+    return (
+      <div className="space-y-4 pt-3 pb-20 px-3 animate-in fade-in duration-500 font-sans text-right" dir="rtl">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-50 flex items-center justify-between py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 -mx-3 px-4 mb-2 shadow-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setTab("home");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
+            title="الرجوع للرئيسية"
+          >
+            <ChevronRight size={20} />
+          </button>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              {eventsSubTab === "events" ? <Sparkles size={18} /> : <Tag size={18} />}
+            </div>
+            <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
+              أحداث وعروض الشرقاط
+            </span>
+          </div>
+
+          <div className="w-9 h-9" />
+        </div>
+
+        {/* Sub-Tabs: الأحداث | العروض */}
+        <div className="flex items-center gap-2 p-1.5 bg-slate-100/90 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl">
+          <button
+            type="button"
+            onClick={() => {
+              setEventsSubTab("events");
+              setSearch("");
+            }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
+              eventsSubTab === "events"
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-[1.02]"
+                : "text-slate-600 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-700/50"
+            }`}
+          >
+            <Sparkles size={16} />
+            <span>أحداث الشرقاط</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEventsSubTab("offers");
+              setSearch("");
+            }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
+              eventsSubTab === "offers"
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-[1.02]"
+                : "text-slate-600 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-700/50"
+            }`}
+          >
+            <Tag size={16} />
+            <span>عروض الشرقاط</span>
+          </button>
+        </div>
+
+        {eventsSubTab === "events" ? (
+          <>
+            {/* Search Bar for Events */}
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="ابحث في أحداث وإعلانات الشرقاط..."
+              focusRingClass="focus:ring-emerald-500/20"
+            />
+
+            {/* List of Events */}
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white dark:bg-slate-800 rounded-3xl h-28 animate-pulse border border-slate-100 dark:border-slate-800" />
+                ))}
+              </div>
+            ) : filteredGovAnnouncements.length === 0 ? (
+              <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
+                لا توجد أحداث أو إعلانات مطابقة حالياً
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 pb-8">
+                {filteredGovAnnouncements.map((item) => (
+                  <EventPostCard
+                    key={item.id}
+                    item={item}
+                    layout="list"
+                    onClick={() => setSelectedGovAnnouncement(item)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Search Bar for Offers */}
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="ابحث في عروض وخصومات الشرقاط..."
+              focusRingClass="focus:ring-emerald-500/20"
+            />
+            {renderServiceOffersContent(true)}
+          </>
+        )}
       </div>
     );
   };
@@ -4073,37 +4113,127 @@ export default function App() {
     );
   };
 
-  const showBottomBar =
-    !splash &&
-    !selectedDoctor &&
-    !selectedTaxi &&
-    !selectedCraftsman &&
-    !selectedGovAnnouncement &&
-    !selectedBanner &&
-    !selectedStoreId &&
-    (!sidebarPage || sidebarPage === null);
+  const showBottomBar = false;
 
   return (
     <div
       className="min-h-screen font-sans bg-slate-50 text-slate-800"
       dir="rtl"
     >
+      {/* 3-second Splash Screen with App Logo, Title, Phrase and Loading Animation in Brand Colors */}
+      <AnimatePresence>
+        {showSplash && (
+          <motion.div
+            key="splash-screen"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-between py-12 px-6 bg-gradient-to-b from-[#022c22] via-[#064e3b] to-[#0d9488] text-white font-sans overflow-hidden select-none"
+            dir="rtl"
+          >
+            {/* Background ambient particles */}
+            <div className="absolute inset-0 pointer-events-none opacity-30">
+              <div className="absolute top-1/4 left-1/5 w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+              <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-white rounded-full opacity-60" />
+              <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-emerald-200 rounded-full blur-xs opacity-40" />
+              <div className="absolute top-2/3 right-1/5 w-1.5 h-1.5 bg-white rounded-full opacity-80" />
+            </div>
+
+            {/* Top Spacer */}
+            <div className="w-full h-8" />
+
+            {/* Center Content Area */}
+            <div className="flex flex-col items-center justify-center text-center space-y-8 my-auto">
+              {/* Outer Glowing Rings */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="relative flex items-center justify-center"
+              >
+                {/* Aura Glow */}
+                <div className="absolute w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-emerald-400/20 animate-pulse blur-xl" />
+                <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center p-3 shadow-2xl relative">
+                  <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-white/15 border border-white/20 flex items-center justify-center p-3">
+                    
+                    {/* App Icon Rounded Card */}
+                    <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-3xl bg-gradient-to-b from-emerald-600 to-teal-800 p-3 shadow-2xl flex flex-col items-center justify-center border border-white/30 relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/15 to-white/0" />
+                      <img
+                        src="/logo_shirqat.svg"
+                        alt="دليل الشرقاط"
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md mb-1"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span className="text-[11px] font-black text-white tracking-tight drop-shadow-xs">
+                        دليل الشرقاط
+                      </span>
+                      <span className="text-[8px] font-bold text-emerald-200/90 tracking-tighter">
+                        كل ما تحتاجه في الشرقاط
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Text Section */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="space-y-2"
+              >
+                <h1 className="text-3xl sm:text-4xl font-display font-black text-white tracking-wide drop-shadow-lg">
+                  دليل الشرقاط
+                </h1>
+                <p className="text-base sm:text-lg font-bold text-emerald-100/90 drop-shadow-sm">
+                  كل ما تحتاجه في مكان واحد.
+                </p>
+              </motion.div>
+
+              {/* Animated Loading Dots & Spinner */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="flex flex-col items-center space-y-4 pt-2"
+              >
+                {/* 3 Pulsing Dots */}
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-white/90 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-2.5 h-2.5 bg-white/90 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-2.5 h-2.5 bg-white/90 rounded-full animate-bounce" />
+                </div>
+
+                {/* Curved Spinner */}
+                <div className="w-7 h-7 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              </motion.div>
+            </div>
+
+            {/* Bottom Branding / Version */}
+            <div className="text-[11px] font-bold text-emerald-200/60 tracking-wider">
+              تطبيق دليل الشرقاط • الخدمة الشاملة
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
 
-      <div className="max-w-lg mx-auto pb-24">
-        {selectedStoreId && marketStores.find((s) => s.id === selectedStoreId) ? (
+      <div className="max-w-lg mx-auto pb-6">
+        {selectedStoreId && (medicalComplexes.find((s) => s.id === selectedStoreId) || marketStores.find((s) => s.id === selectedStoreId)) ? (
           <StoreDetailPage
-            store={marketStores.find((s) => s.id === selectedStoreId)!}
-            activeOrders={activeOrders}
+            store={(medicalComplexes.find((s) => s.id === selectedStoreId) || marketStores.find((s) => s.id === selectedStoreId))!}
             onBack={() => setSelectedStoreId(null)}
           />
         ) : (
           <>
             {tab === "home" && renderHome()}
-            {(tab === "directory" || tab === "doctors") && renderDirectoryTab()}
+            {tab === "doctors" && renderDoctorsTab()}
+            {(tab === "services" || tab === "directory") && renderServicesTab()}
             {tab === "restaurants" && renderRestaurantsTab()}
             {tab === "offers" && renderOffersTab()}
-            {tab === "notifications" && renderNotificationsTab()}
+            {tab === "events" && renderEventsTab()}
             {tab === "settings" && renderSettingsTab()}
           </>
         )}
@@ -4119,16 +4249,6 @@ export default function App() {
             onBack={() => setSelectedDoctor(null)}
             image={activeDoctor.image}
             isVerified={false}
-            headerAction={
-              <button
-                type="button"
-                onClick={() => toggleFavorite(activeDoctor.id, 'doctor')}
-                className="w-9 h-9 rounded-xl flex items-center justify-center bg-amber-50 dark:bg-amber-950/40 text-amber-500 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                title={activeDoctor.showInHome || favoriteIds.includes(activeDoctor.id) ? "إزالة من دليل الشرقاط" : "إضافة إلى دليل الشرقاط"}
-              >
-                <Star size={18} className={activeDoctor.showInHome || favoriteIds.includes(activeDoctor.id) ? "fill-amber-500 text-amber-500" : "text-slate-400"} />
-              </button>
-            }
           >
             <div className="space-y-3.5 font-sans" dir="rtl">
               {/* 1. التخصص */}
@@ -4182,54 +4302,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* 5. الحجز الإلكتروني */}
-              {activeDoctor.isBookingEnabled && (
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border-2 border-dashed border-shirqat-primary/30 text-center col-span-full">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
-                    خدمة الحجز الإلكتروني
-                  </p>
-                  <button
-                    onClick={() => setBookingDoctor(activeDoctor)}
-                    className="w-full h-14 bg-shirqat-primary text-white rounded-2xl font-black shadow-lg shadow-shirqat-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Calendar size={20} /> احجز موعدك الآن
-                  </button>
-                </div>
-              )}
 
-              {/* 6. الموقع الجغرافي الخريطة */}
-              {activeDoctor.lat && activeDoctor.lng && (
-                <div
-                  className="bg-slate-50 dark:bg-slate-850 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col gap-3 shadow-sm text-right"
-                  dir="rtl"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                      <MapPin size={16} className="text-emerald-500" />
-                      الموقع الجغرافي الدقيق 📍
-                    </span>
-                    <button
-                      onClick={() =>
-                        window.open(
-                          `https://www.google.com/maps/dir/?api=1&destination=${activeDoctor.lat},${activeDoctor.lng}`,
-                          "_blank",
-                        )
-                      }
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 active:scale-95 transition-all cursor-pointer flex items-center gap-1"
-                    >
-                      عرض المسار 🚗
-                    </button>
-                  </div>
-
-                  <MapPicker
-                    lat={activeDoctor.lat}
-                    lng={activeDoctor.lng}
-                    readOnly={true}
-                    color="#10b981"
-                    height="240px"
-                  />
-                </div>
-              )}
 
             </div>
           </DetailPage>
@@ -4238,29 +4311,19 @@ export default function App() {
         {selectedTaxi && (
           <DetailPage
             title={selectedTaxi.name}
-            subtitle={undefined}
-            icon={<Car size={56} />}
+            subtitle={selectedTaxi.carType || (selectedTaxi as any).craft || selectedTaxi.category || "خدمة عامة"}
+            icon={<Wrench size={56} />}
             onBack={() => setSelectedTaxi(null)}
             image={selectedTaxi.image}
             isVerified={false}
-            headerAction={
-              <button
-                type="button"
-                onClick={() => toggleFavorite(selectedTaxi.id, 'taxi')}
-                className="w-9 h-9 rounded-xl flex items-center justify-center bg-amber-50 dark:bg-amber-950/40 text-amber-500 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                title={selectedTaxi.showInHome || favoriteIds.includes(selectedTaxi.id) ? "إزالة من دليل الشرقاط" : "إضافة إلى دليل الشرقاط"}
-              >
-                <Star size={18} className={selectedTaxi.showInHome || favoriteIds.includes(selectedTaxi.id) ? "fill-amber-500 text-amber-500" : "text-slate-400"} />
-              </button>
-            }
           >
             <div className="space-y-3.5 font-sans" dir="rtl">
-              {/* 1. نوع السيارة */}
-              {selectedTaxi.carType && (
+              {/* 1. الخدمة / المهنة */}
+              {(selectedTaxi.carType || (selectedTaxi as any).craft || selectedTaxi.category) && (
                 <DetailRow
-                  icon={<Car className="text-emerald-500" />}
-                  label="نوع السيارة"
-                  value={selectedTaxi.carType}
+                  icon={<Wrench className="text-amber-500" />}
+                  label="الخدمة / المهنة"
+                  value={selectedTaxi.carType || (selectedTaxi as any).craft || selectedTaxi.category}
                 />
               )}
 
@@ -4287,12 +4350,12 @@ export default function App() {
               {/* 4. التفاصيل */}
               {selectedTaxi.notes && (
                 <div className="flex items-start gap-3.5 p-4 bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 rounded-2xl">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
                     <FileText size={18} />
                   </div>
                   <div className="flex-1 min-w-0 text-right">
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block mb-1 uppercase tracking-wider">
-                      التفاصيل
+                      التفاصيل والوصف
                     </span>
                     <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
                       {selectedTaxi.notes}
@@ -4304,74 +4367,7 @@ export default function App() {
           </DetailPage>
         )}
 
-        {selectedCraftsman && (
-          <DetailPage
-            title={selectedCraftsman.name}
-            subtitle={selectedCraftsman.craft}
-            icon={<Wrench size={56} />}
-            onBack={() => setSelectedCraftsman(null)}
-            image={selectedCraftsman.image}
-            isVerified={false}
-            headerAction={
-              <button
-                type="button"
-                onClick={() => toggleFavorite(selectedCraftsman.id, 'craftsman')}
-                className="w-9 h-9 rounded-xl flex items-center justify-center bg-amber-50 dark:bg-amber-950/40 text-amber-500 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                title={selectedCraftsman.showInHome || favoriteIds.includes(selectedCraftsman.id) ? "إزالة من دليل الشرقاط" : "إضافة إلى دليل الشرقاط"}
-              >
-                <Star size={18} className={selectedCraftsman.showInHome || favoriteIds.includes(selectedCraftsman.id) ? "fill-amber-500 text-amber-500" : "text-slate-400"} />
-              </button>
-            }
-          >
-            <div className="space-y-3.5 font-sans" dir="rtl">
-              {/* 1. المهنة والتخصص */}
-              {selectedCraftsman.craft && (
-                <DetailRow
-                  icon={<Wrench className="text-emerald-500" />}
-                  label="المهنة والتخصص"
-                  value={selectedCraftsman.craft}
-                />
-              )}
 
-              {/* 2. رقم الهاتف */}
-              {selectedCraftsman.phone && (
-                <DetailRow
-                  icon={<Phone className="text-emerald-500" />}
-                  label="رقم الهاتف"
-                  value={selectedCraftsman.phone}
-                  actionIcon={<Phone size={14} />}
-                  onAction={() => window.open(`tel:${selectedCraftsman.phone}`)}
-                />
-              )}
-
-              {/* 3. المنطقة */}
-              {selectedCraftsman.location && (
-                <DetailRow
-                  icon={<MapPin className="text-emerald-500" />}
-                  label="المنطقة"
-                  value={selectedCraftsman.location}
-                />
-              )}
-
-              {/* 4. التفاصيل */}
-              {selectedCraftsman.notes && (
-                <div className="flex items-start gap-3.5 p-4 bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 rounded-2xl">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
-                    <FileText size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0 text-right">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block mb-1 uppercase tracking-wider">
-                      التفاصيل
-                    </span>
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
-                      {selectedCraftsman.notes}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </DetailPage>
-        )}
 
         {selectedGovAnnouncement && activeGovAnnouncement && (
           <motion.div 
@@ -4379,14 +4375,19 @@ export default function App() {
             animate={{ x: 0 }} 
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-            className="fixed inset-0 z-[120] bg-slate-50 dark:bg-slate-900 flex flex-col pointer-events-auto"
+            className="fixed inset-0 z-[120] bg-slate-50 dark:bg-slate-900 flex flex-col pointer-events-auto font-sans"
           >
             {/* Sticky Top Header Bar */}
-            <div className="sticky top-0 z-[130] bg-white/90 backdrop-blur-md dark:bg-slate-900/90 border-b border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between shrink-0" dir="rtl">
+            <div className="sticky top-0 z-[130] bg-white/90 backdrop-blur-md dark:bg-slate-900/90 border-b border-slate-100 dark:border-slate-800 p-3.5 sm:p-4 flex items-center justify-between shrink-0" dir="rtl">
               <div className="w-10 h-10 shrink-0" />
-              <span className="font-black text-sm text-slate-800 dark:text-slate-100 truncate flex-1 text-center px-4">
-                {activeGovAnnouncement.title}
-              </span>
+              <div className="flex-1 text-center px-2 min-w-0">
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-wider block">
+                  تفاصيل الحدث والإعلان
+                </span>
+                <span className="font-black text-sm text-slate-800 dark:text-slate-100 truncate block">
+                  {activeGovAnnouncement.title}
+                </span>
+              </div>
               <button 
                 onClick={() => setSelectedGovAnnouncement(null)} 
                 className="w-10 h-10 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-800 dark:text-slate-200 cursor-pointer transition-all active:scale-95 shrink-0"
@@ -4396,7 +4397,7 @@ export default function App() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-5 text-right pb-24 custom-scrollbar" dir="rtl">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 text-right pb-28 custom-scrollbar" dir="rtl">
 
               {/* Cover Image or Carousel */}
               {(() => {
@@ -4410,68 +4411,118 @@ export default function App() {
                 if (detailImages.length === 0) return null;
                 
                 return (
-                  <DetailsCarousel 
-                    images={detailImages} 
-                    title={activeGovAnnouncement.title} 
-                  />
+                  <div className="relative rounded-3xl overflow-hidden shadow-2xs border border-slate-100 dark:border-slate-800">
+                    <DetailsCarousel 
+                      images={detailImages} 
+                      title={activeGovAnnouncement.title} 
+                    />
+                  </div>
                 );
               })()}
 
-              {/* Content details like HeritagePage */}
-              <div className="space-y-4">
-                {/* Unified Price & Contact Bar */}
-                {(activeGovAnnouncement.entity || activeGovAnnouncement.phoneNumber || activeGovAnnouncement.linkUrl) && (
-                  <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-2.5 px-3 rounded-2xl flex flex-row items-center justify-between gap-3 text-right shadow-sm">
-                    {/* Right side: Location / Status */}
-                    {activeGovAnnouncement.entity ? (
-                      <div>
-                        <p className="text-[8px] text-slate-400 dark:text-slate-500 font-black leading-none">الموقع</p>
-                        <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{activeGovAnnouncement.entity}</p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-[8px] text-slate-400 dark:text-slate-500 font-black leading-none">خيارات</p>
-                        <p className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 mt-0.5">التواصل متوفر</p>
-                      </div>
-                    )}
+              {/* Title & Category Summary Card */}
+              <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/70 p-4 sm:p-5 rounded-3xl shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1.5">
+                    <Sparkles size={12} />
+                    <span>{activeGovAnnouncement.entity || "حدث / إعلان رسمى"}</span>
+                  </span>
 
-                    {/* Left side: Communication Buttons */}
-                    <div className="flex items-center gap-1.5">
-                      {activeGovAnnouncement.phoneNumber && (
-                        <button
-                          onClick={() => {
-                            window.location.href = `tel:${activeGovAnnouncement.phoneNumber}`;
-                          }}
-                          className="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-2.5 py-1.5 rounded-xl flex items-center gap-1 text-[10px] font-black transition-all active:scale-[0.97] border border-indigo-500/5"
-                        >
-                          <Phone size={10} />
-                          <span>{activeGovAnnouncement.phoneText || "اتصال"}</span>
-                        </button>
-                      )}
+                  {(activeGovAnnouncement.publishDate || (activeGovAnnouncement as any).createdAt) && (
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1">
+                      <Calendar size={13} />
+                      <span>{activeGovAnnouncement.publishDate || "تاريخ حديث"}</span>
+                    </span>
+                  )}
+                </div>
 
-                      {activeGovAnnouncement.linkUrl && (
-                        <button
-                          onClick={() => {
-                            window.open(activeGovAnnouncement.linkUrl, '_blank');
-                          }}
-                          className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-2.5 py-1.5 rounded-xl flex items-center gap-1 text-[10px] font-black transition-all active:scale-[0.97] border border-slate-200 dark:border-slate-650"
-                        >
-                          <Globe size={10} />
-                          <span>{activeGovAnnouncement.linkText || "الرابط"}</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                <h2 className="font-display font-black text-base sm:text-lg text-slate-800 dark:text-white leading-snug">
+                  {activeGovAnnouncement.title}
+                </h2>
+              </div>
+
+              {/* Organized Key Information Cards */}
+              <div className="space-y-2.5">
+                <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider px-1">
+                  بيانات التواصل والموقع
+                </h3>
+
+                {/* 1. Location / Entity */}
+                {activeGovAnnouncement.entity && (
+                  <DetailRow
+                    icon={<MapPin size={20} className="text-emerald-500 dark:text-emerald-400" />}
+                    label="الجهة / الموقع"
+                    value={activeGovAnnouncement.entity}
+                  />
                 )}
 
-                {/* Extended Details Box with spacing preservation like HeritagePage */}
-                <div className="bg-white dark:bg-slate-800 border border-slate-150 dark:border-slate-700 p-5 rounded-[2rem] shadow-sm">
-                  <p className="text-slate-800 dark:text-slate-100 text-sm md:text-base font-semibold leading-relaxed whitespace-pre-wrap text-right font-sans">
+                {/* 2. Contact Phone */}
+                {activeGovAnnouncement.phoneNumber && (
+                  <DetailRow
+                    icon={<Phone size={20} className="text-emerald-500 dark:text-emerald-400" />}
+                    label="رقم الاستفسار والتواصل"
+                    value={activeGovAnnouncement.phoneNumber}
+                    isPhone={true}
+                  />
+                )}
+
+                {/* 3. External Link */}
+                {activeGovAnnouncement.linkUrl && (
+                  <DetailRow
+                    icon={<Globe size={20} className="text-emerald-500 dark:text-emerald-400" />}
+                    label="الرابط المرفق"
+                    value={activeGovAnnouncement.linkText || "رابط التفاصيل والتسجيل"}
+                    actionIcon={<ExternalLink size={16} />}
+                    onAction={() => window.open(activeGovAnnouncement.linkUrl, '_blank')}
+                  />
+                )}
+              </div>
+
+              {/* Extended Description Box */}
+              {activeGovAnnouncement.description && (
+                <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/70 p-5 rounded-3xl shadow-2xs space-y-3">
+                  <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/60 pb-3 text-slate-800 dark:text-slate-100">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <FileText size={18} />
+                    </div>
+                    <span className="font-display font-black text-xs sm:text-sm">
+                      تفاصيل الشرح والمعلومات
+                    </span>
+                  </div>
+
+                  <p className="text-slate-700 dark:text-slate-200 text-sm font-semibold leading-relaxed whitespace-pre-wrap text-right font-sans">
                     {activeGovAnnouncement.description}
                   </p>
                 </div>
-              </div>
+              )}
             </div>
+
+            {/* Bottom Floating Action Bar if Phone or Link exists */}
+            {(activeGovAnnouncement.phoneNumber || activeGovAnnouncement.linkUrl) && (
+              <div className="fixed bottom-0 inset-x-0 z-[140] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 p-3 px-4 flex items-center gap-3 max-w-lg mx-auto shadow-2xl" dir="rtl">
+                {activeGovAnnouncement.phoneNumber && (
+                  <a
+                    href={`tel:${activeGovAnnouncement.phoneNumber}`}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-2xl flex items-center justify-center gap-2 text-xs shadow-lg shadow-emerald-600/25 active:scale-[0.98] transition-all"
+                  >
+                    <Phone size={16} />
+                    <span>اتصل الآن ({activeGovAnnouncement.phoneText || "الاستفسار"})</span>
+                  </a>
+                )}
+
+                {activeGovAnnouncement.linkUrl && (
+                  <button
+                    onClick={() => window.open(activeGovAnnouncement.linkUrl, '_blank')}
+                    className={`flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 font-black py-3 rounded-2xl flex items-center justify-center gap-2 text-xs active:scale-[0.98] transition-all ${
+                      !activeGovAnnouncement.phoneNumber ? "w-full" : ""
+                    }`}
+                  >
+                    <ExternalLink size={16} />
+                    <span>{activeGovAnnouncement.linkText || "فتح الرابط"}</span>
+                  </button>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
         {selectedServiceOffer && activeServiceOffer && (
@@ -4480,24 +4531,26 @@ export default function App() {
             animate={{ x: 0 }} 
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-            className="fixed inset-0 z-[120] bg-slate-50 dark:bg-slate-900 flex flex-col pointer-events-auto"
+            className="fixed inset-0 z-[120] bg-slate-50 dark:bg-slate-900 flex flex-col pointer-events-auto font-sans"
           >
             {/* Sticky Top Header Bar */}
-            <div className="sticky top-0 z-[130] bg-white/90 backdrop-blur-md dark:bg-slate-900/90 border-b border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between shrink-0" dir="rtl">
-              <div className="w-10 h-10 shrink-0" />
-              <span className="font-black text-sm text-slate-800 dark:text-slate-100 truncate flex-1 text-center px-4">
-                {activeServiceOffer.title}
-              </span>
+            <div className="sticky top-0 z-[130] bg-white/90 backdrop-blur-md dark:bg-slate-900/90 border-b border-slate-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shrink-0" dir="rtl">
+              <div className="w-9 h-9 shrink-0" />
+              <div className="flex-1 text-center px-2 min-w-0">
+                <span className="font-black text-base text-slate-800 dark:text-slate-100 truncate block">
+                  تفاصيل
+                </span>
+              </div>
               <button 
                 onClick={() => setSelectedServiceOffer(null)} 
-                className="w-10 h-10 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-800 dark:text-slate-200 cursor-pointer transition-all active:scale-95 shrink-0"
+                className="w-9 h-9 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-800 dark:text-slate-200 cursor-pointer transition-all active:scale-95 shrink-0"
                 title="رجوع"
               >
-                <ChevronRight size={22} />
+                <ChevronRight size={20} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-5 text-right pb-24 custom-scrollbar" dir="rtl">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-3.5 space-y-2 text-right pb-24 custom-scrollbar" dir="rtl">
 
               {/* Cover Image or Carousel */}
               {(() => {
@@ -4511,187 +4564,61 @@ export default function App() {
                 if (detailImages.length === 0) return null;
                 
                 return (
-                  <DetailsCarousel 
-                    images={detailImages} 
-                    title={activeServiceOffer.title} 
-                  />
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xs border border-slate-100 dark:border-slate-800">
+                    <DetailsCarousel 
+                      images={detailImages} 
+                      title={activeServiceOffer.title} 
+                      heightClass="h-40 sm:h-44"
+                      marginClass="my-0"
+                    />
+                  </div>
                 );
               })()}
 
-              <div className="space-y-4">
-                {/* Unified Price & Contact Bar */}
-                {(activeServiceOffer.price || activeServiceOffer.whatsappNumber || activeServiceOffer.tag) && (
-                  <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-2.5 px-3 rounded-2xl flex flex-row items-center justify-between gap-3 text-right shadow-sm">
-                    {/* Right side: Price / Tag */}
-                    {activeServiceOffer.price ? (
-                      <div>
-                        <p className="text-[8px] text-slate-400 dark:text-slate-500 font-black leading-none">السعر / العرض</p>
-                        <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{activeServiceOffer.price}</p>
-                      </div>
-                    ) : activeServiceOffer.tag ? (
-                      <div>
-                        <p className="text-[8px] text-slate-400 dark:text-slate-500 font-black leading-none">التصنيف</p>
-                        <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{activeServiceOffer.tag}</p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-[8px] text-slate-400 dark:text-slate-500 font-black leading-none">خيارات</p>
-                        <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 mt-0.5">التواصل متوفر</p>
-                      </div>
-                    )}
+              {/* Title Directly Under Image */}
+              <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/70 p-3 sm:p-3.5 rounded-2xl shadow-2xs">
+                <h2 className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white leading-snug">
+                  {activeServiceOffer.title}
+                </h2>
+              </div>
 
-                    {/* Left side: Communication Buttons */}
-                    <div className="flex items-center gap-1.5">
-                      {activeServiceOffer.whatsappNumber && (
-                        <button
-                          onClick={() => {
-                            const cleanNum = activeServiceOffer.whatsappNumber.replace(/\D/g, '');
-                            window.open(`tel:${cleanNum}`, '_self');
-                          }}
-                          className="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2.5 py-1.5 rounded-xl flex items-center gap-1 text-[10px] font-black transition-all active:scale-[0.97] border border-emerald-500/5"
-                        >
-                          <Phone size={10} />
-                          <span>{activeServiceOffer.buttonText || "اتصال مباشر"}</span>
-                        </button>
-                      )}
+              {/* Price & Call Button Bar */}
+              {(activeServiceOffer.price || activeServiceOffer.whatsappNumber || activeServiceOffer.phone) && (
+                <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/70 p-2.5 sm:p-3 rounded-2xl shadow-2xs flex items-center justify-between gap-3">
+                  {activeServiceOffer.price ? (
+                    <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-black text-xs sm:text-sm">
+                      <Tag size={16} className="shrink-0" />
+                      <span>{activeServiceOffer.price}</span>
                     </div>
-                  </div>
-                )}
-
-                {/* Extended Details Box */}
-                <div className="bg-white dark:bg-slate-800 border border-slate-150 dark:border-slate-700 p-5 rounded-[2rem] shadow-sm">
-                  {activeServiceOffer.subtitle && (
-                    <div className="mb-3 text-xs font-black text-slate-400 dark:text-slate-450">
-                      🏷️ {activeServiceOffer.subtitle}
-                    </div>
+                  ) : (
+                    <div />
                   )}
-                  <p className="text-slate-800 dark:text-slate-100 text-sm md:text-base font-semibold leading-relaxed whitespace-pre-wrap text-right font-sans">
+
+                  {(activeServiceOffer.whatsappNumber || activeServiceOffer.phone) && (
+                    <a
+                      href={`tel:${(activeServiceOffer.whatsappNumber || activeServiceOffer.phone).replace(/\D/g, '')}`}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3.5 py-2 rounded-xl flex items-center gap-1.5 text-xs shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
+                    >
+                      <Phone size={14} />
+                      <span>اتصال</span>
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Description Box Without Title */}
+              {activeServiceOffer.description && (
+                <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/70 p-3 sm:p-3.5 rounded-2xl shadow-2xs">
+                  <p className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold leading-relaxed whitespace-pre-wrap text-right font-sans">
                     {activeServiceOffer.description}
                   </p>
                 </div>
-              </div>
+              )}
             </div>
           </motion.div>
         )}
 
-        {selectedMarketListing && activeMarketListing && (
-          <motion.div 
-            initial={{ x: '100%' }} 
-            animate={{ x: 0 }} 
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-            className="fixed inset-0 z-[120] bg-slate-50 dark:bg-slate-900 flex flex-col pointer-events-auto"
-          >
-            {/* Sticky Top Header Bar */}
-            <div className="sticky top-0 z-[130] bg-white/90 backdrop-blur-md dark:bg-slate-900/90 border-b border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between shrink-0" dir="rtl">
-              <div className="w-10 h-10 shrink-0" />
-              <span className="font-black text-sm text-slate-800 dark:text-slate-100 truncate flex-1 text-center px-4">
-                {activeMarketListing.title}
-              </span>
-              <button 
-                onClick={() => setSelectedMarketListing(null)} 
-                className="w-10 h-10 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-800 dark:text-slate-200 cursor-pointer transition-all active:scale-95 shrink-0"
-                title="رجوع"
-              >
-                <ChevronRight size={22} />
-              </button>
-            </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-5 text-right pb-24 custom-scrollbar" dir="rtl">
-
-              {/* Cover Images Carousel (up to 3 images) */}
-              {(() => {
-                const detailImages = [];
-                if (activeMarketListing.images && activeMarketListing.images.length > 0) {
-                  detailImages.push(...activeMarketListing.images.slice(0, 3));
-                } else if (activeMarketListing.image) {
-                  detailImages.push(activeMarketListing.image);
-                }
-                
-                if (detailImages.length === 0) return null;
-                
-                return (
-                  <DetailsCarousel 
-                    images={detailImages} 
-                    title={activeMarketListing.title} 
-                  />
-                );
-              })()}
-
-              <div className="space-y-4">
-                {/* Title & Price & Category Box */}
-                <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 p-4 rounded-3xl shadow-xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">
-                      {activeMarketListing.category}
-                    </span>
-                    {activeMarketListing.price && (
-                      <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                        {activeMarketListing.price}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="font-display font-black text-base text-slate-800 dark:text-white leading-snug">
-                    {activeMarketListing.title}
-                  </h3>
-                  {activeMarketListing.location && (
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-bold pt-1">
-                      <MapPin size={14} className="text-emerald-500" />
-                      <span>{activeMarketListing.location}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Contact Actions (Phone & WhatsApp) */}
-                {(activeMarketListing.phone || activeMarketListing.whatsappNumber) && (
-                  <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 p-3.5 rounded-3xl flex items-center justify-between gap-3 shadow-xs">
-                    <div className="text-right">
-                      <p className="text-[9px] text-slate-400 font-bold">رقم التواصل</p>
-                      <p className="text-xs font-black text-slate-800 dark:text-white" dir="ltr">
-                        {activeMarketListing.phone || activeMarketListing.whatsappNumber}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {activeMarketListing.phone && (
-                        <a
-                          href={`tel:${activeMarketListing.phone.replace(/\D/g, '')}`}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl flex items-center gap-1.5 text-xs font-black transition-all active:scale-95 shadow-xs"
-                        >
-                          <Phone size={14} />
-                          <span>اتصال</span>
-                        </a>
-                      )}
-                      {!["سيارات", "عقارات", "موبايلات"].includes(activeMarketListing.category || "") && (activeMarketListing.whatsappNumber || activeMarketListing.phone) && (
-                        <a
-                          href={`https://wa.me/${(activeMarketListing.whatsappNumber || activeMarketListing.phone).replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3.5 py-2 rounded-xl flex items-center gap-1.5 text-xs font-black transition-all active:scale-95"
-                        >
-                          <Whatsapp size={14} />
-                          <span>واتساب</span>
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Description Box */}
-                {activeMarketListing.description && (
-                  <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 p-4 rounded-3xl shadow-xs space-y-2">
-                    <h4 className="font-display font-black text-xs text-slate-400 dark:text-slate-500">
-                      التفاصيل والوصف
-                    </h4>
-                    <p className="text-slate-800 dark:text-slate-100 text-xs md:text-sm font-bold leading-relaxed whitespace-pre-wrap">
-                      {activeMarketListing.description}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         {selectedBanner && (
           <OverlayPage
@@ -4752,25 +4679,29 @@ export default function App() {
                 confirmDelete={confirmDelete}
                 doctors={doctors}
                 taxis={taxis}
-                craftsmen={craftsmen}
-                setCraftsmen={setCraftsmen}
-                govAnnouncements={govAnnouncements}
                 banners={banners}
                 appSettings={appSettings}
                 saveSettings={saveSettings}
+                medicalComplexes={medicalComplexes}
+                setMedicalComplexes={setMedicalComplexes}
                 marketStores={marketStores}
                 adminSelectedStore={adminSelectedStore}
                 setAdminSelectedStore={setAdminSelectedStore}
                 adminMarketProducts={adminMarketProducts}
-                hospitalDoctors={hospitalDoctors}
+                adminSelectedOffer={adminSelectedOffer}
+                setAdminSelectedOffer={setAdminSelectedOffer}
+                adminOfferProducts={adminOfferProducts}
                 notifications={notifications}
+                govAnnouncements={govAnnouncements}
                 setNotifications={setNotifications}
                 seedDatabase={seedDatabase}
                 setDoctors={setDoctors}
                 setMarketStores={setMarketStores}
                 setServiceOffers={setServiceOffers}
-                marketListings={marketListings}
-                setMarketListings={setMarketListings}
+                doctorSpecialtiesList={doctorSpecialtiesList}
+                setDoctorSpecialtiesList={setDoctorSpecialtiesList}
+                serviceCategoriesList={serviceCategoriesList}
+                setServiceCategoriesList={setServiceCategoriesList}
               />
             </Suspense>
           </OverlayPage>
@@ -4835,7 +4766,7 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.5, y: 20 }}
             onClick={scrollToTop}
             id="scroll-to-top-btn"
-            className="fixed bottom-28 right-6 z-[250] w-14 h-14 bg-slate-900/90 dark:bg-shirqat-primary text-white rounded-full shadow-2xl flex items-center justify-center border border-white/20 active:scale-90 transition-all pointer-events-auto backdrop-blur-md"
+            className={`fixed ${selectedStoreId ? "bottom-20" : "bottom-6"} right-6 z-[250] w-14 h-14 bg-slate-900/90 dark:bg-shirqat-primary text-white rounded-full shadow-2xl flex items-center justify-center border border-white/20 active:scale-90 transition-all duration-300 pointer-events-auto backdrop-blur-md`}
           >
             <ArrowRight size={24} className="-rotate-90" />
           </motion.button>
@@ -4844,10 +4775,11 @@ export default function App() {
 
       <AnimatePresence>
         {sidebarPage === "about" && (
-          <OverlayPage title="عن التطبيق" onBack={() => setSidebarPage(null)}>
-            <div className="p-6 space-y-6 text-right">
-              <div className="bg-gradient-to-br from-shirqat-primary to-indigo-600 p-8 rounded-[2.5rem] text-white shadow-xl flex flex-col items-center text-center">
-                <div className="w-20 h-20 bg-white/15 rounded-full p-0.5 overflow-hidden border border-white/25 mb-4 shadow-lg animate-pulse">
+          <OverlayPage title="من نحن" onBack={() => setSidebarPage(null)}>
+            <div className="p-6 space-y-6 text-right font-sans" dir="rtl">
+              {/* Main Banner */}
+              <div className="bg-gradient-to-br from-shirqat-primary via-emerald-700 to-teal-800 p-8 rounded-[2.5rem] text-white shadow-xl flex flex-col items-center text-center relative overflow-hidden">
+                <div className="w-20 h-20 bg-white/15 rounded-full p-1 overflow-hidden border border-white/30 mb-4 shadow-lg">
                   <img
                     src="/logo_shirqat.svg"
                     alt="دليل الشرقاط"
@@ -4855,13 +4787,11 @@ export default function App() {
                     referrerPolicy="no-referrer"
                   />
                 </div>
-                <h3 className="text-2xl font-display font-black mb-2">
-                  دليل الشرقاط
+                <h3 className="text-2xl font-display font-black mb-3">
+                  تطبيق دليل الشرقاط
                 </h3>
-                <p className="text-sm font-bold opacity-90 leading-loose">
-                  هو التطبيق الرسمي الأول والوحيد لخدمة أهالي قضاء الشرقاط، يهدف
-                  لتسهيل الوصول للخدمات الطبية، سواق الأجرة، التبليغات، وغيرها من
-                  الخدمات الحيوية.
+                <p className="text-base font-medium leading-relaxed opacity-95 max-w-md">
+                  تطبيق <span className="font-black text-amber-300">دليل الشرقاط</span> هو أول تطبيق خدمي في قضاء الشرقاط، تم إنشاؤه لتوفير خدمة مجانية متكاملة تسهّل على المواطنين البحث عن أرقام هواتف الأطباء، العيادات التخصصية، المجمعات والمراكز الطبية.
                 </p>
               </div>
             </div>
@@ -4887,49 +4817,6 @@ export default function App() {
                   لا نقوم بجمع أي بيانات شخصية حساسة عن المستخدمين. جميع
                   المعلومات المعروضة (أرقام الهواتف، العناوين) هي معلومات عامة
                   وافق أصحابها على نشرها لخدمة الصالح العام.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <h4 className="font-display font-black text-slate-800">
-                  كيف نستخدم المعلومات؟
-                </h4>
-                <p className="text-sm font-bold text-slate-500 leading-loose">
-                  تُستخدم المعلومات فقط لتمكين المستخدم من التواصل مع مقدمي
-                  الخدمة مباشرة عبر الهاتف أو واتساب.
-                </p>
-              </div>
-            </div>
-          </OverlayPage>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {sidebarPage === "terms" && (
-          <OverlayPage
-            title="شروط الاستخدام"
-            onBack={() => setSidebarPage(null)}
-          >
-            <div className="p-6 space-y-8 text-right">
-              <div className="flex flex-col items-center py-8 opacity-20">
-                <Scale size={64} className="text-shirqat-primary" />
-              </div>
-              <div className="space-y-4">
-                <h4 className="font-display font-black text-slate-800">
-                  صحة المعلومات
-                </h4>
-                <p className="text-sm font-bold text-slate-500 leading-loose">
-                  نحن نسعى جاهدين لضمان دقة جميع البيانات في التطبيق، ولكننا لا
-                  نتحقق من الهويات الشخصية لكل مشترك بشكل كامل، لذا يجب على
-                  المستخدم التأكد قبل التعامل المالي.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <h4 className="font-display font-black text-slate-800">
-                  السلوك المحظور
-                </h4>
-                <p className="text-sm font-bold text-slate-500 leading-loose">
-                  يُحظر تماماً استخدام أرقام الهواتف الموجودة في التطبيق لأغراض
-                  الإزعاج أو التهديد، وسيعرض ذلك الفاعل للمظائلة القانونية.
                 </p>
               </div>
             </div>
@@ -4974,103 +4861,6 @@ export default function App() {
           </OverlayPage>
         )}
       </AnimatePresence>
-
-      <AnimatePresence>
-        {bookingDoctor && (
-          <div
-            className="fixed inset-0 z-[600] flex items-end justify-center p-0"
-            dir="rtl"
-          >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-              onClick={() => setBookingDoctor(null)}
-            />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              className="relative bg-white dark:bg-slate-800 w-full max-w-lg rounded-t-[3rem] p-8 pb-[calc(5rem+env(safe-area-inset-bottom))] shadow-2xl"
-            >
-              <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8" />
-              <div className="text-right mb-8">
-                <h3 className="text-2xl font-display font-black text-slate-800">
-                  حجز موعد
-                </h3>
-                <p className="text-xs font-bold text-slate-400 mt-1">
-                  احجز موعدك عند الدكتور {bookingDoctor.name}
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
-                    اسم المريض
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="أدخل اسمك الكامل"
-                    value={bookingData.patientName}
-                    onChange={(e) =>
-                      setBookingData({
-                        ...bookingData,
-                        patientName: e.target.value,
-                      })
-                    }
-                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 text-right font-bold focus:ring-2 focus:ring-shirqat-primary/20 outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
-                    رقم الهاتف
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="07xx xxx xxxx"
-                    value={bookingData.patientPhone}
-                    onChange={(e) =>
-                      setBookingData({
-                        ...bookingData,
-                        patientPhone: e.target.value,
-                      })
-                    }
-                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 text-right font-bold focus:ring-2 focus:ring-shirqat-primary/20 outline-none"
-                  />
-                </div>
-
-                <button
-                  onClick={() => {
-                    if (!bookingData.patientName || !bookingData.patientPhone) {
-                      alert("يرجى ملء البيانات");
-                      return;
-                    }
-                    const msg = `مرحباً، أود حجز موعد باسم المريض: ${bookingData.patientName}، رقم الهاتف: ${bookingData.patientPhone}`;
-                    window.open(
-                      `https://wa.me/${formatWhatsApp(bookingDoctor.whatsappBookingNumber || bookingDoctor.phone1)}?text=${encodeURIComponent(msg)}`,
-                      "_blank",
-                    );
-
-                    playSuccessSound();
-                    if (window.navigator.vibrate)
-                      window.navigator.vibrate([20, 50, 20]);
-                    setBookingDoctor(null);
-                    setBookingData({ patientName: "", patientPhone: "" });
-                    setBookingToast(true);
-                    setTimeout(() => setBookingToast(false), 3000);
-                  }}
-                  className="w-full h-16 bg-shirqat-primary text-white rounded-2xl font-black shadow-xl shadow-shirqat-primary/20 active:scale-95 transition-all flex items-center justify-center gap-3 mt-4 mb-6"
-                >
-                  <Whatsapp size={24} /> إرسال الطلب عبر واتساب
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-
 
       <AnimatePresence>
         {showAdModal && (
@@ -5140,7 +4930,7 @@ export default function App() {
                 تسجيل دخول الإدارة
               </h3>
               <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 leading-relaxed mb-6">
-                هذه اللوحة مخصصة لإدارة تطبيق دليل الشرقاط فقط (تحديث المحتوى، الرد على الطلبات، وإرسال الإشعارات).
+                هذه اللوحة مخصصة لإدارة تطبيق دليل الشرقاط فقط (تحديث المحتوى والرد على الطلبات).
               </p>
 
               <button
@@ -5166,73 +4956,6 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
-
-      <AnimatePresence>
-        {bookingToast && (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[700] bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2 font-black text-sm whitespace-nowrap"
-          >
-            <CheckCircle size={18} /> تم إرسال طلب الحجز بنجاح
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Bottom Navigation Bar (التبويب السفلي) */}
-      {showBottomBar && (
-        <div className="fixed bottom-0 left-0 right-0 z-[200] pointer-events-none" dir="rtl">
-          <div className="max-w-lg mx-auto px-4 pb-3 pt-4">
-            <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-3xl p-1.5 shadow-2xl shadow-slate-900/10 flex items-center justify-around pointer-events-auto relative">
-              {[
-                { id: "home", label: "الرئيسية", icon: <Home size={20} />, activeColor: "bg-emerald-600 text-white" },
-                { 
-                  id: "notifications", 
-                  label: "الإشعارات", 
-                  icon: (
-                    <div className="relative">
-                      <Bell size={20} />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -left-1 bg-rose-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-slate-900">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </div>
-                  ), 
-                  activeColor: "bg-emerald-600 text-white" 
-                },
-                { id: "settings", label: "الإعدادات", icon: <Settings size={20} />, activeColor: "bg-emerald-600 text-white" },
-              ].map((item) => {
-                const isActive = tab === item.id && subTab === null;
-
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      if (window.navigator.vibrate) window.navigator.vibrate(6);
-                      setTab(item.id as any);
-                      setSubTab(null);
-                      setShowAllOffersModal(false);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 cursor-pointer active:scale-95 flex-1 ${
-                      isActive
-                        ? `${item.activeColor} shadow-md`
-                        : "text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/60"
-                    }`}
-                  >
-                    <div className="mb-0.5">{item.icon}</div>
-                    <span className={`text-[9px] font-black tracking-tight ${isActive ? "text-white" : ""}`}>
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Settings Sidebar Drawer (قائمة الضبط الجانبية) */}
       <AnimatePresence>
@@ -5279,120 +5002,58 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Notifications Overlay Page (صفحة الإشعارات) */}
-      <AnimatePresence>
-        {showNotificationsPanel && (
-          <OverlayPage
-            title="الإشعارات والتنبيهات 🔔"
-            onBack={() => {
-              setShowNotificationsPanel(false);
-              markAllNotificationsAsRead();
-            }}
-          >
-            <div className="space-y-4 pt-2 font-sans text-right" dir="rtl">
-              {/* Unread Alert Indicator */}
-              {unreadCount > 0 && (
-                <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 rounded-3xl flex items-center gap-3">
-                  <div className="w-10 h-10 bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center animate-pulse shrink-0">
-                    <Bell size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-rose-800 dark:text-rose-200">إشعارات جديدة غير مقروءة!</p>
-                    <p className="text-[10px] text-rose-500/80 font-bold">لديك {unreadCount} إشعارات لم تقرأها بعد.</p>
-                  </div>
-                </div>
-              )}
 
-              {/* Action Buttons */}
-              {notifications.length > 0 && (
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-xs font-black text-slate-400">إجمالي التنبيهات: {notifications.length}</span>
-                  <button
-                    onClick={markAllNotificationsAsRead}
-                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 active:scale-95 cursor-pointer bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1.5 rounded-xl transition-all"
-                  >
-                    تحديد الكل كمقروء ✓
-                  </button>
-                </div>
-              )}
+      {/* Fixed Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-[200] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800/80 px-4 py-2 flex items-center justify-around shadow-lg font-sans max-w-lg mx-auto" dir="rtl">
+        <button
+          type="button"
+          onClick={() => {
+            setTab("home");
+            setSubTab(null);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className={`flex flex-col items-center gap-1 transition-all cursor-pointer active:scale-95 py-1 px-3 rounded-2xl ${
+            tab === "home"
+              ? "text-shirqat-primary dark:text-emerald-400 font-black bg-shirqat-primary/10 dark:bg-emerald-950/40"
+              : "text-slate-400 dark:text-slate-500 hover:text-slate-600 font-bold"
+          }`}
+        >
+          <Home size={20} className={tab === "home" ? "stroke-[2.5]" : "stroke-[1.75]"} />
+          <span className="text-[10px]">الرئيسية</span>
+        </button>
 
-              {/* Notifications List */}
-              <div className="space-y-3 pb-8">
-                {notifications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700/50 shadow-xs">
-                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-750 text-slate-400 rounded-full flex items-center justify-center mb-4">
-                      <Bell size={28} className="opacity-40" />
-                    </div>
-                    <p className="text-sm font-black text-slate-700 dark:text-slate-200">صندوق الإشعارات فارغ</p>
-                    <p className="text-xs text-slate-400 font-bold mt-1.5 leading-relaxed max-w-xs">
-                      لا توجد أي إشعارات أو تنبيهات عامة مرسلة من لوحة الإدارة في الوقت الحالي.
-                    </p>
-                  </div>
-                ) : (
-                  notifications.map((notif) => {
-                    const isUnread = !readNotificationIds.includes(notif.id);
-                    return (
-                      <div
-                        key={notif.id}
-                        className={`p-5 rounded-[2rem] border transition-all duration-300 relative overflow-hidden shadow-xs flex flex-col gap-2.5 ${
-                          isUnread
-                            ? "bg-white dark:bg-slate-800 border-rose-100 dark:border-rose-900/50 hover:border-rose-200"
-                            : "bg-white/70 dark:bg-slate-800/60 border-slate-100 dark:border-slate-850 hover:bg-white dark:hover:bg-slate-800"
-                        }`}
-                      >
-                        {/* Unread Indicator Bar */}
-                        {isUnread && (
-                          <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-rose-500" />
-                        )}
+        <button
+          type="button"
+          onClick={() => {
+            setTab("directory");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className={`flex flex-col items-center gap-1 transition-all cursor-pointer active:scale-95 py-1 px-3 rounded-2xl ${
+            tab === "directory" || tab === "services"
+              ? "text-shirqat-primary dark:text-emerald-400 font-black bg-shirqat-primary/10 dark:bg-emerald-950/40"
+              : "text-slate-400 dark:text-slate-500 hover:text-slate-600 font-bold"
+          }`}
+        >
+          <BookOpen size={20} className={tab === "directory" || tab === "services" ? "stroke-[2.5]" : "stroke-[1.75]"} />
+          <span className="text-[10px]">الدليل</span>
+        </button>
 
-                        {/* Notification Header: Icon & Date */}
-                        <div className="flex justify-between items-center gap-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-rose-500 text-sm">🔔</span>
-                            <span className="text-xs font-black text-rose-600 dark:text-rose-400">تنبيه</span>
-                          </div>
-                          <span className="text-[10px] font-bold text-slate-400 shrink-0 bg-slate-50 dark:bg-slate-750 px-2 py-0.5 rounded-md">
-                            {new Date(notif.timestamp || Date.now()).toLocaleDateString("ar-EG", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-
-                        {/* Notification Message Text Only */}
-                        <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 leading-relaxed pr-1 whitespace-pre-line">
-                          {notif.message}
-                        </p>
-
-                        {/* Mark as read button if unread */}
-                        {isUnread && (
-                          <div className="flex justify-end pt-1">
-                            <button
-                              onClick={() => {
-                                const newRead = [...readNotificationIds, notif.id];
-                                setReadNotificationIds(newRead);
-                                localStorage.setItem("read_notification_ids", JSON.stringify(newRead));
-                              }}
-                              className="text-[10px] font-black text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 rounded-lg cursor-pointer"
-                            >
-                              تحديد كمقروء ✓
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </OverlayPage>
-        )}
-
-
-
-      </AnimatePresence>
+        <button
+          type="button"
+          onClick={() => {
+            setTab("settings");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className={`flex flex-col items-center gap-1 transition-all cursor-pointer active:scale-95 py-1 px-3 rounded-2xl ${
+            tab === "settings"
+              ? "text-shirqat-primary dark:text-emerald-400 font-black bg-shirqat-primary/10 dark:bg-emerald-950/40"
+              : "text-slate-400 dark:text-slate-500 hover:text-slate-600 font-bold"
+          }`}
+        >
+          <SettingsIcon size={20} className={tab === "settings" ? "stroke-[2.5]" : "stroke-[1.75]"} />
+          <span className="text-[10px]">الضبط</span>
+        </button>
+      </div>
     </div>
   );
 }

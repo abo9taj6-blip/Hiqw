@@ -1,6 +1,6 @@
 export interface BannerAd {
   id: string;
-  image: string;
+  image?: string;
   type: 'internal' | 'external' | 'text';
   targetId?: string;
   targetType?: 'doctor' | 'restaurant' | 'hospital' | 'govAnnouncement' | 'serviceOffers';
@@ -27,18 +27,18 @@ export interface TaxiDriver {
   showInHome?: boolean;
 }
 
-export interface Craftsman {
+export interface DoctorSpecialty {
   id: string;
   name: string;
-  craft: string;
-  phone: string;
-  location?: string;
-  notes?: string;
-  whatsappNumber?: string;
-  image?: string;
-  category?: string;
+  order?: number;
   createdAt?: number;
-  showInHome?: boolean;
+}
+
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  order?: number;
+  createdAt?: number;
 }
 
 export interface Doctor {
@@ -52,12 +52,11 @@ export interface Doctor {
   phone2?: string;
   image?: string;
   reviews?: number;
-  isBookingEnabled?: boolean;
-  whatsappBookingNumber?: string;
-  lat?: number;
-  lng?: number;
   isVerified?: boolean;
   showInHome?: boolean;
+  complexId?: string;       // Linked Medical Complex
+  workingDays?: string;     // Days of duty / work days
+  reservationPhone?: string; // Doctor's reservation phone number
 }
 
 export interface GovAnnouncement {
@@ -75,8 +74,6 @@ export interface GovAnnouncement {
   images?: string[];
   category?: string;
   publishDate?: string;
-  lat?: number;
-  lng?: number;
 }
 
 export interface DiscountCode {
@@ -107,7 +104,10 @@ export interface MarketStore {
   discountCodes?: DiscountCode[];
   createdAt: number;
   menuCategories?: string[];
+  isMedicalComplex?: boolean;
 }
+
+export type MedicalComplex = MarketStore;
 
 
 export interface HospitalDoctor {
@@ -151,7 +151,8 @@ export interface ServiceOffer {
   description: string;
   image?: string;
   images?: string[];
-  whatsappNumber: string;
+  whatsappNumber?: string;
+  phone?: string;
   buttonText?: string;
   price?: string;
   discount?: string;
@@ -166,28 +167,12 @@ export interface ServiceOffer {
   menuItems?: ServiceMenuItem[];
 }
 
-export interface MarketListing {
-  id: string;
-  title: string;
-  category: 'سيارات' | 'عقارات' | 'موبايلات' | string;
-  price: string;
-  phone: string;
-  whatsappNumber?: string;
-  location: string;
-  description: string;
-  images: string[];
-  image?: string;
-  isActive?: boolean;
-  showInHome?: boolean;
-  createdAt: number;
-}
-
 export interface MarketProduct {
   id: string;
   storeId: string;
   name: string;
   description?: string;
-  price: number;
+  price: number | string;
   images: string[];
   isAvailable: boolean;
   isFeatured: boolean;
@@ -207,9 +192,30 @@ export interface MarketProduct {
   carSpecs?: string;
   carEngine?: string;
   menuCategory?: string;
+  category?: string;
   isAnnouncement?: boolean;
   announcementType?: string;
   whatsappOrder?: string;
+}
+
+export function parsePriceNumber(price: any): number {
+  if (typeof price === 'number') return price;
+  if (!price) return 0;
+  const cleaned = String(price).replace(/[^0-9.]/g, '');
+  return parseFloat(cleaned) || 0;
+}
+
+export function formatPriceDisplay(price: any): string {
+  if (price === undefined || price === null || price === "") return "0 د.ع";
+  if (typeof price === "number") {
+    return `${price.toLocaleString()} د.ع`;
+  }
+  const str = String(price).trim();
+  const num = Number(str.replace(/,/g, ""));
+  if (!isNaN(num) && str.length > 0) {
+    return `${num.toLocaleString()} د.ع`;
+  }
+  return str;
 }
 
 export interface Notification {

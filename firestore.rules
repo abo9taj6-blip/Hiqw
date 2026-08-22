@@ -71,6 +71,11 @@ service cloud.firestore {
       allow read: if true;
       allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userLikes', 'updatedAt'])) || isAdmin();
       allow write: if isAdmin();
+
+      match /offer_products/{productId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
     }
 
     match /banners/{bannerId} {
@@ -84,6 +89,11 @@ service cloud.firestore {
     }
 
     match /hospital_doctors/{doctorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /doctor_specialties/{specialtyId} {
       allow read: if true;
       allow write: if isAdmin();
     }
@@ -144,14 +154,37 @@ service cloud.firestore {
       }
     }
 
+    match /medical_complexes/{complexId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      
+      match /complex_doctors/{doctorId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      match /market_products/{productId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
     match /market_listings/{listingId} {
       allow read: if true;
       allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userLikes', 'updatedAt'])) || isAdmin();
       allow write: if isAdmin();
     }
 
-    // Allow collectionGroup query for market_products
+    // Allow collectionGroup query for market_products and offer_products
     match /{path=**}/market_products/{productId} {
+      allow read: if true;
+    }
+
+    match /{path=**}/complex_doctors/{doctorId} {
+      allow read: if true;
+    }
+
+    match /{path=**}/offer_products/{productId} {
       allow read: if true;
     }
 

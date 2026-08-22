@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { ChevronRight, ChevronLeft } from "lucide-react";
+import { ChevronLeft, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { GovAnnouncement, ServiceOffer } from "../types";
 
 interface Props {
   item: GovAnnouncement | ServiceOffer | any;
   onClick: () => void;
+  layout?: "list" | "card";
 }
 
-export default function EventPostCard({ item, onClick }: Props) {
+export default function EventPostCard({ item, onClick, layout = "list" }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Normalize images
@@ -27,103 +28,91 @@ export default function EventPostCard({ item, onClick }: Props) {
     return () => clearInterval(interval);
   }, [postImages.length]);
 
-  const tagOrCategory = item.category || item.tag;
+  if (layout === "list") {
+    return (
+      <motion.div
+        onClick={onClick}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        className="w-full bg-white dark:bg-slate-800 rounded-2xl p-2 sm:p-2.5 flex items-center gap-3 border border-slate-100 dark:border-slate-800/80 hover:border-emerald-300 dark:hover:border-emerald-800/60 shadow-xs hover:shadow-md transition-all cursor-pointer group text-right relative overflow-hidden"
+        dir="rtl"
+      >
+        {/* Compact Image Thumbnail */}
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 overflow-hidden shrink-0 relative border border-slate-100 dark:border-slate-700/60 flex items-center justify-center">
+          {postImages.length > 0 ? (
+            <img
+              src={postImages[0]}
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+            />
+          ) : (
+            <div className="text-emerald-600 dark:text-emerald-400 text-xl">
+              <Sparkles size={22} />
+            </div>
+          )}
+          {postImages.length > 1 && (
+            <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md backdrop-blur-xs">
+              📷 {postImages.length}
+            </span>
+          )}
+        </div>
 
+        {/* Title ONLY */}
+        <div className="flex-1 min-w-0 pr-0.5">
+          <h3 className="font-display font-black text-xs sm:text-sm text-slate-800 dark:text-white line-clamp-2 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+            {item.title}
+          </h3>
+        </div>
+
+        {/* Left Action Arrow */}
+        <div className="shrink-0 flex items-center justify-center pl-1">
+          <div className="w-7 h-7 rounded-lg bg-slate-50 dark:bg-slate-700/50 group-hover:bg-emerald-600 group-hover:text-white text-slate-400 dark:text-slate-400 flex items-center justify-center transition-all duration-300 group-hover:-translate-x-1">
+            <ChevronLeft size={16} />
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Full Feed Grid Card Layout ("card")
   return (
     <motion.div
       onClick={onClick}
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100/85 dark:border-slate-800/60 shadow-sm overflow-hidden flex flex-col text-right hover:shadow-md transition-shadow duration-300 h-full cursor-pointer group"
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.98 }}
+      className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800/80 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col text-right cursor-pointer group"
+      dir="rtl"
     >
-      {/* 1. Image Banner on top with optimized aspect ratio for side-by-side display */}
+      {/* Top Image */}
       {postImages.length > 0 ? (
-        <div className="relative aspect-[4/3] w-full bg-slate-50 dark:bg-slate-950 overflow-hidden border-b border-slate-50 dark:border-slate-900 group/post-carousel">
-          <AnimatePresence mode="popLayout">
-            <motion.img
-              key={currentIndex}
-              src={postImages[currentIndex]}
-              alt={`${item.title} - image ${currentIndex + 1}`}
-              initial={{ x: "100%", opacity: 1 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "-100%", opacity: 1 }}
-              transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
-            />
-          </AnimatePresence>
-
-          {/* Carousel Navigation Arrows */}
-          {postImages.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentIndex((prev) => (prev - 1 + postImages.length) % postImages.length);
-                }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/30 hover:bg-black/50 text-white rounded-full flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/post-carousel:opacity-100 transition-opacity duration-300 active:scale-95 text-xs font-bold"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentIndex((prev) => (prev + 1) % postImages.length);
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-black/30 hover:bg-black/50 text-white rounded-full flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/post-carousel:opacity-100 transition-opacity duration-300 active:scale-95 text-xs font-bold"
-              >
-                ›
-              </button>
-            </>
-          )}
-
-          {/* Dots Indicators */}
-          {postImages.length > 1 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 bg-black/20 px-1.5 py-0.5 rounded-full backdrop-blur-[2px]">
-              {postImages.map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentIndex(idx);
-                  }}
-                  className={`h-1 rounded-full transition-all duration-300 ${idx === currentIndex ? "w-2 bg-white" : "w-1 bg-white/50"}`}
-                />
-              ))}
-            </div>
-          )}
+        <div className="relative h-32 sm:h-36 w-full bg-slate-50 dark:bg-slate-950 overflow-hidden border-b border-slate-100 dark:border-slate-800">
+          <img
+            src={postImages[0]}
+            alt={item.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
         </div>
       ) : (
-        <div className="aspect-[4/3] w-full bg-gradient-to-tr from-emerald-500/10 to-teal-500/10 flex items-center justify-center text-3xl opacity-40 border-b border-slate-50 dark:border-slate-900">
-          ✨
+        <div className="h-28 w-full bg-emerald-50 dark:bg-emerald-950/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+          <Sparkles size={28} />
         </div>
       )}
 
-      {/* 2. Post Body */}
-      <div className="p-3 space-y-2 flex-1 flex flex-col justify-between">
-        <div className="space-y-1.5">
-          {/* Title */}
-          <h3 className="font-display font-black text-xs md:text-sm text-slate-800 dark:text-white leading-snug line-clamp-2 group-hover:text-shirqat-primary transition-colors">
-            {item.title}
-          </h3>
+      {/* Body: Title ONLY */}
+      <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+        <h3 className="font-display font-black text-xs sm:text-sm text-slate-800 dark:text-white line-clamp-2 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+          {item.title}
+        </h3>
 
-          {/* Category / Tag badge */}
-          {tagOrCategory && (
-            <div className="flex flex-wrap items-center gap-1.5 text-[9px] font-bold">
-              <span className="text-[8px] font-black bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-800">
-                {tagOrCategory}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* 3. Action button (عرض التفاصيل) */}
-        <div className="pt-2">
-          <div className="w-full bg-shirqat-primary hover:bg-emerald-700 text-white py-1.5 rounded-xl flex items-center justify-center gap-1 text-[10px] font-black transition-all group-hover:scale-[1.02] active:scale-[0.98]">
-            <span>عرض التفاصيل ↗</span>
-          </div>
+        <div className="pt-1.5 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between text-[11px] font-black text-emerald-600 dark:text-emerald-400">
+          <span>التفاصيل</span>
+          <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
         </div>
       </div>
     </motion.div>

@@ -306,6 +306,24 @@
       },
       "required": ["id", "name", "specialty", "shift", "days", "isActive"]
     },
+    "OfferProduct": {
+      "title": "Offer Product",
+      "description": "Product or meal item included in a service offer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "price": { "type": "string" },
+        "menuCategory": { "type": "string" },
+        "description": { "type": "string" },
+        "offerId": { "type": "string" },
+        "isAvailable": { "type": "boolean" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["offerId"]
+    },
     "MarketListing": {
       "title": "Market Listing",
       "description": "Market item listing (Cars, Real estate, Phones, etc)",
@@ -322,11 +340,45 @@
         "isActive": { "type": "boolean" }
       },
       "required": ["id", "title", "tag"]
+    },
+    "MedicalComplex": {
+      "title": "Medical Complex",
+      "description": "Medical center, complex or specialty hospital",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "location": { "type": "string" },
+        "phone1": { "type": "string" },
+        "phone2": { "type": "string" },
+        "description": { "type": "string" },
+        "note": { "type": "string" },
+        "logoImage": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "isFeatured": { "type": "boolean" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "name"]
+    },
+    "DoctorSpecialty": {
+      "title": "Doctor Specialty",
+      "description": "Medical specialty category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "name"]
     }
   },
   "firestore": {
     "/users/{uid}": { "schema": "User", "description": "User profiles and roles" },
     "/market_listings/{listingId}": { "schema": "MarketListing", "description": "Classifieds and market listings" },
+    "/doctor_specialties/{specialtyId}": { "schema": "DoctorSpecialty", "description": "Managed doctor medical specialties" },
     "/heritage/{heritageId}": { "schema": "Heritage", "description": "Shirqat historical and cultural heritage elements" },
     "/doctors/{doctorId}": { "schema": "Doctor", "description": "Medical professionals" },
     "/taxis/{taxiId}": { "schema": "Taxi", "description": "Taxi services" },
@@ -339,10 +391,14 @@
     "/audit_logs/{logId}": { "schema": "AuditLog", "description": "Admin activity logs" },
     "/blood_donors/{donorId}": { "schema": "BloodDonor", "description": "Voluntary blood donors list" },
     "/hospital_doctors/{doctorId}": { "schema": "HospitalDoctor", "description": "Hospital doctors schedules and shifts" },
+    "/serviceOffers/{offerId}": { "schema": "ServiceOffer", "description": "Promotional and business service offers" },
+    "/serviceOffers/{offerId}/offer_products/{productId}": { "schema": "OfferProduct", "description": "Products or meals included in a specific offer" },
     "/gym_subscribers/{subscriberId}": { "schema": "GymSubscriber", "description": "Gym subscriber accounts and workout programs" },
     "/market_stores/{storeId}/gym_tips/{tipId}": { "schema": "GymTip", "description": "Gym tips and nutritional articles" },
     "/market_stores/{storeId}/gym_subscriptions/{subscriptionId}": { "schema": "GymSubscription", "description": "Gym subscription options and packages" },
     "/market_stores/{storeId}/institute_courses/{courseId}": { "schema": "InstituteCourse", "description": "Courses offered by matching educational institutes" },
-    "/market_stores/{storeId}/institute_students/{studentId}": { "schema": "InstituteStudent", "description": "Registered students of matching educational institutes" }
+    "/market_stores/{storeId}/institute_students/{studentId}": { "schema": "InstituteStudent", "description": "Registered students of matching educational institutes" },
+    "/medical_complexes/{complexId}": { "schema": "MedicalComplex", "description": "Medical complexes, centers, and specialty hospitals" },
+    "/medical_complexes/{complexId}/complex_doctors/{doctorId}": { "schema": "Doctor", "description": "Doctors and medical personnel inside a medical complex" }
   }
 }

@@ -5,47 +5,84 @@ interface AutoHorizontalCarouselProps<T> {
   renderItem: (item: T, index: number) => React.ReactNode;
   intervalMs?: number;
   className?: string;
+  speed?: number;
 }
 
 export function AutoHorizontalCarousel<T extends { id: string | number }>({
   items,
   renderItem,
-  intervalMs = 3000,
   className = "",
+  speed = 0.35,
 }: AutoHorizontalCarouselProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const currentIndexRef = useRef(0);
+  const animFrameRef = useRef<number | null>(null);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Duplicate items for a seamless continuous loop if items > 3
+  const shouldLoop = items && items.length > 3;
+  const displayItems = React.useMemo(() => {
+    if (!items || items.length === 0) return [];
+    if (shouldLoop) {
+      return [...items, ...items];
+    }
+    return items;
+  }, [items, shouldLoop]);
+
   useEffect(() => {
-    if (!items || items.length <= 1 || isPaused) return;
+    if (!shouldLoop || isPaused) return;
 
-    const timer = setInterval(() => {
-      const container = containerRef.current;
-      if (!container) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-      currentIndexRef.current = (currentIndexRef.current + 1) % items.length;
-      const targetChild = container.children[currentIndexRef.current] as HTMLElement;
-      if (targetChild) {
-        // Scroll only the carousel container horizontally, avoiding any page vertical scroll jumps
-        const scrollLeftPosition = targetChild.offsetLeft - (container.clientWidth - targetChild.clientWidth) / 2;
-        container.scrollTo({
-          left: scrollLeftPosition,
-          behavior: "smooth",
-        });
+    let lastTime = performance.now();
+
+    const animate = (now: number) => {
+      const delta = Math.min((now - lastTime) / 16.6, 2);
+      lastTime = now;
+
+      if (container && !isPaused) {
+        const halfWidth = container.scrollWidth / 2;
+
+        if (halfWidth > 0) {
+          const prevPos = container.scrollLeft;
+
+          // Reversed scroll direction (scrolling opposite direction)
+          if (container.scrollLeft > 0) {
+            container.scrollLeft -= speed * delta;
+            if (container.scrollLeft <= 1) {
+              container.scrollLeft += halfWidth;
+            }
+          } else {
+            container.scrollLeft += speed * delta;
+            if (container.scrollLeft >= -1) {
+              container.scrollLeft -= halfWidth;
+            }
+          }
+
+          // Fallback if browser scroll position didn't change
+          if (container.scrollLeft === prevPos) {
+            container.scrollLeft += (prevPos >= 0 ? speed : -speed) * delta;
+          }
+        }
       }
-    }, intervalMs);
 
-    return () => clearInterval(timer);
-  }, [items, intervalMs, isPaused]);
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [shouldLoop, isPaused, speed]);
 
   const handleTouchOrScroll = () => {
     setIsPaused(true);
     if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
     pauseTimeoutRef.current = setTimeout(() => {
       setIsPaused(false);
-    }, 7000);
+    }, 4000);
   };
 
   return (
@@ -54,14 +91,16 @@ export function AutoHorizontalCarousel<T extends { id: string | number }>({
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchOrScroll}
-      className={`flex items-stretch gap-3 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-1 px-1 -mx-1 ${className}`}
+      className={`flex items-stretch gap-3 overflow-x-auto no-scrollbar py-1 px-1 -mx-1 select-none ${className}`}
       dir="rtl"
     >
-      {items.map((item, index) => (
-        <div key={item.id} className="snap-center shrink-0">
-          {renderItem(item, index)}
+      {displayItems.map((item, index) => (
+        <div key={`${item.id}-${index}`} className="shrink-0">
+          {renderItem(item, index % items.length)}
         </div>
       ))}
     </div>
   );
 }
+
+
