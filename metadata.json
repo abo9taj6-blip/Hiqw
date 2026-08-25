@@ -1,6 +1,6 @@
 {
   "name": "دليل الشرقاط",
-  "description": "دليل الشرقاط الشامل - كل ما تحتاجه في مكان واحد من أطباء ومطاعم وسيارات",
+  "description": "دليل الشرقاط الشامل - دليل المجمعات الطبية، الأطباء، الخدمات والمهن، والإشعارات المباشرة",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

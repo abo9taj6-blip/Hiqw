@@ -101,7 +101,7 @@ import { DetailPage, SectionHeader, DetailRow } from "./components/DetailPage";
 import { OverlayPage } from "./components/OverlayPage";
 import { ItemCard } from "./components/ItemCard";
 import { SearchBar } from "./components/SearchBar";
-import StoreDetailPage from "./components/market/StoreDetailPage";
+import MedicalComplexDetailPage from "./components/MedicalComplexDetailPage";
 import EventPostCard from "./components/EventPostCard";
 import { AdminPanel } from "./components/AdminPanel";
 
@@ -807,6 +807,25 @@ export default function App() {
       return [];
     }
   });
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("read_notification_ids") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => !readNotificationIds.includes(n.id)).length;
+  }, [notifications, readNotificationIds]);
+
+  const markAllNotificationsAsRead = () => {
+    const allIds = notifications.map((n) => n.id);
+    setReadNotificationIds(allIds);
+    try {
+      localStorage.setItem("read_notification_ids", JSON.stringify(allIds));
+    } catch {}
+  };
   const [reminders, setReminders] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("shirqat_reminders") || "[]");
@@ -1181,23 +1200,6 @@ export default function App() {
   // App Settings
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [showNotificationsPanel, setShowNotificationsPanel] = useState(false);
-  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem("read_notification_ids") || "[]");
-    } catch {
-      return [];
-    }
-  });
-
-  const unreadCount = useMemo(() => {
-    return notifications.filter((n) => !readNotificationIds.includes(n.id)).length;
-  }, [notifications, readNotificationIds]);
-
-  const markAllNotificationsAsRead = () => {
-    const allIds = notifications.map((n) => n.id);
-    setReadNotificationIds(allIds);
-    localStorage.setItem("read_notification_ids", JSON.stringify(allIds));
-  };
 
   // Automated Cache Syncing to LocalStorage to prevent stale cache or data loss
   const [sidebarPage, setSidebarPage] = useState<
@@ -2523,7 +2525,21 @@ export default function App() {
 
           {/* Left Side (على اليسار): Notifications Button (Show ONLY on main home) */}
           <div className="flex items-center justify-end z-10">
-            <div className="w-9 h-9" />
+            <button
+              onClick={() => {
+                setTab("notifications");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="relative w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 border border-slate-200/60 dark:border-slate-700"
+              title="الإشعارات والتنبيهات"
+            >
+              <Bell size={18} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-rose-500 text-white rounded-full text-[10px] font-black flex items-center justify-center px-1 shadow-sm animate-pulse">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -4222,8 +4238,8 @@ export default function App() {
 
       <div className="max-w-lg mx-auto pb-6">
         {selectedStoreId && (medicalComplexes.find((s) => s.id === selectedStoreId) || marketStores.find((s) => s.id === selectedStoreId)) ? (
-          <StoreDetailPage
-            store={(medicalComplexes.find((s) => s.id === selectedStoreId) || marketStores.find((s) => s.id === selectedStoreId))!}
+          <MedicalComplexDetailPage
+            complex={(medicalComplexes.find((s) => s.id === selectedStoreId) || marketStores.find((s) => s.id === selectedStoreId))!}
             onBack={() => setSelectedStoreId(null)}
           />
         ) : (
@@ -4231,9 +4247,7 @@ export default function App() {
             {tab === "home" && renderHome()}
             {tab === "doctors" && renderDoctorsTab()}
             {(tab === "services" || tab === "directory") && renderServicesTab()}
-            {tab === "restaurants" && renderRestaurantsTab()}
-            {tab === "offers" && renderOffersTab()}
-            {tab === "events" && renderEventsTab()}
+            {tab === "notifications" && renderNotificationsTab()}
             {tab === "settings" && renderSettingsTab()}
           </>
         )}
@@ -5025,17 +5039,24 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
-            setTab("directory");
+            setTab("notifications");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className={`flex flex-col items-center gap-1 transition-all cursor-pointer active:scale-95 py-1 px-3 rounded-2xl ${
-            tab === "directory" || tab === "services"
+          className={`relative flex flex-col items-center gap-1 transition-all cursor-pointer active:scale-95 py-1 px-3 rounded-2xl ${
+            tab === "notifications"
               ? "text-shirqat-primary dark:text-emerald-400 font-black bg-shirqat-primary/10 dark:bg-emerald-950/40"
               : "text-slate-400 dark:text-slate-500 hover:text-slate-600 font-bold"
           }`}
         >
-          <BookOpen size={20} className={tab === "directory" || tab === "services" ? "stroke-[2.5]" : "stroke-[1.75]"} />
-          <span className="text-[10px]">الدليل</span>
+          <div className="relative">
+            <Bell size={20} className={tab === "notifications" ? "stroke-[2.5]" : "stroke-[1.75]"} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] bg-rose-500 text-white rounded-full text-[9px] font-black flex items-center justify-center px-1">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px]">الإشعارات</span>
         </button>
 
         <button

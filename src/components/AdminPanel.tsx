@@ -2,34 +2,24 @@ import React, { useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ShieldCheck,
-  LayoutDashboard,
   Bell,
   Stethoscope,
-  Car,
   ImageIcon,
-  ChevronRight,
   Plus,
   X,
   Trash2,
-  Tag,
-  Zap,
   FileOutput,
   FileInput,
   Search,
-  ShoppingBag,
   Wrench,
   ChevronDown,
-  Star,
-  Database,
-  Store,
   ArrowRight,
   Edit3,
-  Check,
-  PackageCheck,
-  Sparkles,
   Hospital,
   SlidersHorizontal,
   RotateCcw,
+  Calendar,
+  Phone,
 } from "lucide-react";
 import {
   Doctor,
@@ -86,31 +76,32 @@ interface AdminPanelProps {
   deleteItem: (id: string, type: string) => void;
   confirmDelete: { id: string; type: string } | null;
   doctors: Doctor[];
-  serviceOffers: any[];
   banners: BannerAd[];
   appSettings: any;
   saveSettings: (v: any) => Promise<void>;
   medicalComplexes?: any[];
   setMedicalComplexes?: React.Dispatch<React.SetStateAction<any[]>>;
-  marketStores: any[];
   adminSelectedStore?: any;
   setAdminSelectedStore?: (val: any) => void;
   adminMarketProducts?: any[];
-  adminSelectedOffer?: any;
-  setAdminSelectedOffer?: (val: any) => void;
-  adminOfferProducts?: any[];
   taxis?: any[];
   notifications?: any[];
   govAnnouncements?: any[];
   setNotifications?: React.Dispatch<React.SetStateAction<any[]>>;
   seedDatabase: () => Promise<void>;
   setDoctors?: React.Dispatch<React.SetStateAction<any[]>>;
-  setMarketStores?: React.Dispatch<React.SetStateAction<any[]>>;
-  setServiceOffers?: React.Dispatch<React.SetStateAction<any[]>>;
   doctorSpecialtiesList?: DoctorSpecialty[];
   setDoctorSpecialtiesList?: React.Dispatch<React.SetStateAction<DoctorSpecialty[]>>;
   serviceCategoriesList?: ServiceCategory[];
   setServiceCategoriesList?: React.Dispatch<React.SetStateAction<ServiceCategory[]>>;
+  // Optional compatibility props
+  marketStores?: any[];
+  setMarketStores?: any;
+  serviceOffers?: any[];
+  setServiceOffers?: any;
+  adminSelectedOffer?: any;
+  setAdminSelectedOffer?: any;
+  adminOfferProducts?: any[];
 }
 
 export const AdminPanel = (props: AdminPanelProps) => {
@@ -130,25 +121,16 @@ export const AdminPanel = (props: AdminPanelProps) => {
     startAdd,
     startEdit,
     deleteItem,
-    confirmDelete,
     doctors = [],
-    serviceOffers = [],
     banners = [],
     medicalComplexes = [],
-    marketStores = [],
     adminSelectedStore,
     setAdminSelectedStore,
     adminMarketProducts = [],
-    adminSelectedOffer,
-    setAdminSelectedOffer,
-    adminOfferProducts = [],
     taxis = [],
     notifications = [],
-    govAnnouncements = [],
     setDoctors,
     setMedicalComplexes,
-    setMarketStores,
-    setServiceOffers,
     doctorSpecialtiesList = [],
     setDoctorSpecialtiesList,
     serviceCategoriesList = [],
@@ -314,7 +296,7 @@ export const AdminPanel = (props: AdminPanelProps) => {
   const handleUpdateServiceCategory = async (id: string) => {
     const trimmed = editingServiceCategoryName.trim();
     if (!trimmed) {
-      alert("يرجى كتابة اسم الفئة الجديد");
+      alert("يرجى كتابة الاسم الجديد");
       return;
     }
     try {
@@ -326,7 +308,7 @@ export const AdminPanel = (props: AdminPanelProps) => {
       await firebaseService.updateDocument("service_categories", id, { name: trimmed });
       setEditingServiceCategoryId(null);
       setEditingServiceCategoryName("");
-      alert("✅ تم تعديل الفئة بنجاح");
+      alert("✅ تم تعديل اسم الفئة بنجاح");
     } catch (e: any) {
       console.error(e);
       alert("فشل تعديل الفئة: " + (e?.message || String(e)));
@@ -348,15 +330,27 @@ export const AdminPanel = (props: AdminPanelProps) => {
   };
 
   const handleResetDefaultServiceCategories = async () => {
-    if (!window.confirm("هل ترغب في استعادة وحفظ قائمة الفئات والمهن الخدمية الافتراضية؟")) return;
+    if (!window.confirm("هل ترغب في استعادة وحفظ قائمة الفئات والمهن الافتراضية؟")) return;
     try {
       const defaultList: ServiceCategory[] = [
-        "سواق تكسي ونقل",
-        "صيانة ومولدات",
-        "حرفيين ومهن حرة",
-        "توصيل وشحن",
-        "خدمات عامة",
-        "محلات وتجارية"
+        "خصوصي",
+        "دليفري",
+        "ستاركس",
+        "حمل",
+        "كهربائي",
+        "صحيات وسباكة",
+        "تبريد وتكييف",
+        "بناء وترميم",
+        "حدادة",
+        "نجارة وأثاث",
+        "صباغة وديكور",
+        "ستلايت وكاميرات",
+        "صيانة موبايل",
+        "صيانة حاسبات",
+        "تصليح أجهزة منزلية",
+        "سحب ونقل سيارات",
+        "تنظيف منازل",
+        "خدمات زراعية"
       ].map((name, i) => ({
         id: `scat-default-${i + 1}`,
         name,
@@ -378,102 +372,113 @@ export const AdminPanel = (props: AdminPanelProps) => {
   };
 
   // Export to Excel
-  const handleExport = () => {
-    let data: any[] = [];
-    let name = "";
-
-    if (adminView === "doctors") {
-      data = doctors;
-      name = "الأطباء";
-    } else if (adminView === "medical_complexes") {
-      data = medicalComplexes || [];
-      name = "المجمعات_الطبية";
-    } else if (adminView === "market_stores") {
-      data = marketStores;
-      name = "المطاعم_والأسواق";
-    } else if (adminView === "taxis") {
-      data = taxis;
-      name = "الخدمات_والمهن";
-    } else if (adminView === "serviceOffers") {
-      data = serviceOffers;
-      name = "العروض_والخدمات";
+  const handleExportExcel = () => {
+    try {
+      if (adminView === "doctors") {
+        excelService.exportToExcel(doctors, "دليل_الأطباء");
+      } else if (adminView === "medical_complexes") {
+        excelService.exportToExcel(medicalComplexes, "دليل_المجمعات_الطبية");
+      } else if (adminView === "taxis") {
+        excelService.exportToExcel(taxis, "دليل_الخدمات_والمهن");
+      } else {
+        alert("يرجى فتح قسم الأطباء، المجمعات الطبية، أو الخدمات للتصدير");
+      }
+    } catch (err: any) {
+      console.error("Export error:", err);
+      alert("حدث خطأ أثناء التصدير: " + (err?.message || "خطأ غير معروف"));
     }
-
-    if (data.length === 0) {
-      alert("لا توجد بيانات لتصديرها في هذا القسم");
-      return;
-    }
-
-    const exportData = data.map((item) => {
-      const { image, images, logoImage, bannerImage, featuredImage, ...rest } = item;
-      return rest;
-    });
-
-    excelService.exportToExcel(
-      exportData,
-      `Backup_${name}_${new Date().toISOString().split("T")[0]}`,
-    );
   };
 
   // Import from Excel
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (
-      !window.confirm(
-        "هل أنت متأكد من استيراد البيانات؟ سيتم إضافة هذه العناصر كبيانات جديدة.",
-      )
-    ) {
-      e.target.value = "";
-      return;
-    }
-
     try {
-      const rawData = await excelService.importFromExcel(file);
-      if (!Array.isArray(rawData) || rawData.length === 0) {
-        alert("الملف فارغ أو غير صحيح");
-        return;
+      if (adminView === "doctors") {
+        const importedDoctors = await excelService.importFromExcel(file);
+        if (!importedDoctors || importedDoctors.length === 0) {
+          alert("لم يتم العثور على أطباء صالحين في الملف!");
+          return;
+        }
+
+        const confirmMsg = `تم استخراج ${importedDoctors.length} طبيب من الملف.\nهل ترغب في حفظهم بقاعدة البيانات؟`;
+        if (window.confirm(confirmMsg)) {
+          for (const doc of importedDoctors) {
+            const item = { ...doc, id: doc.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}` };
+            await firebaseService.saveDocument("doctors", item.id, item);
+          }
+          if (setDoctors) {
+            setDoctors((prev) => {
+              const prevMap = new Map(prev.map((d) => [d.id, d]));
+              importedDoctors.forEach((d) => {
+                const item = { ...d, id: d.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}` };
+                prevMap.set(item.id, item);
+              });
+              return Array.from(prevMap.values());
+            });
+          }
+          alert(`✅ تم استيراد وحفظ ${importedDoctors.length} طبيب بنجاح!`);
+        }
+      } else if (adminView === "medical_complexes") {
+        const importedComplexes = await excelService.importFromExcel(file);
+        if (!importedComplexes || importedComplexes.length === 0) {
+          alert("لم يتم العثور على مجمعات صالحة في الملف!");
+          return;
+        }
+        const confirmMsg = `تم استخراج ${importedComplexes.length} مجمع طبي من الملف.\nهل ترغب في حفظهم بقاعدة البيانات؟`;
+        if (window.confirm(confirmMsg)) {
+          for (const complex of importedComplexes) {
+            const complexItem = {
+              ...complex,
+              id: complex.id || `complex-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+              _storeType: "complex",
+              isMedicalComplex: true,
+              category: complex.category || "مجمع طبي",
+            };
+            await firebaseService.saveDocument("medical_complexes", complexItem.id, complexItem);
+          }
+          if (setMedicalComplexes) {
+            setMedicalComplexes((prev) => {
+              const prevMap = new Map(prev.map((s) => [s.id, s]));
+              importedComplexes.forEach((s) => {
+                const complexItem = {
+                  ...s,
+                  id: s.id || `complex-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                  _storeType: "complex",
+                  isMedicalComplex: true,
+                  category: s.category || "مجمع طبي",
+                };
+                prevMap.set(complexItem.id, complexItem);
+              });
+              return Array.from(prevMap.values());
+            });
+          }
+          alert(`✅ تم استيراد وحفظ ${importedComplexes.length} مجمع طبي بنجاح!`);
+        }
       }
-      alert(`✅ تم قراءة ${rawData.length} عنصر من الملف بنجاح.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err: any) {
+      console.error("Import error:", err);
       alert(`❌ حدث خطأ أثناء معالجة الملف: ${err?.message || "خطأ في قراءة الملف"}`);
     }
   };
 
-  // All Main Admin Grid Sections Configuration
+  // Main Admin Grid Sections Configuration (Focused on user's core requests)
   const navSections = [
     {
       id: "medical_complexes",
       label: "المجمعات الطبية",
-      subtitle: "دليل المجمعات والمراكز والمستشفيات والعيادات",
+      subtitle: "دليل المجمعات والمراكز والمستشفيات والعيادات الاستشارية",
       icon: <Hospital size={24} />,
       badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300",
       accentBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
       count: medicalComplexes?.length || 0,
     },
     {
-      id: "market_stores",
-      label: "المطاعم والأسواق والمحلات",
-      subtitle: "دليل المطاعم، الكافيهات، والأنشطة التجارية في الشرقاط",
-      icon: <ShoppingBag size={24} />,
-      badgeColor: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border-teal-300",
-      accentBg: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
-      count: marketStores?.length || 0,
-    },
-    {
-      id: "serviceOffers",
-      label: "العروض والخدمات",
-      subtitle: "عروض المحلات، التخفيضات، والخدمات الحصرية",
-      icon: <Sparkles size={24} />,
-      badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300",
-      accentBg: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
-      count: serviceOffers?.length || 0,
-    },
-    {
       id: "doctors",
       label: "الأطباء",
-      subtitle: "الأطباء والعيادات التخصصية والعناوين",
+      subtitle: "الأطباء والعيادات التخصصية وإدارة التخصصات",
       icon: <Stethoscope size={24} />,
       badgeColor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300",
       accentBg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
@@ -508,70 +513,16 @@ export const AdminPanel = (props: AdminPanelProps) => {
     },
   ];
 
-  const isSelectedStoreComplex =
-    adminSelectedStore?._storeType === "complex"
-      ? true
-      : adminSelectedStore?._storeType === "store"
-      ? false
-      : adminSelectedStore?.isMedicalComplex === true
-      ? true
-      : adminSelectedStore?.category === "مجمع طبي" ||
-        adminSelectedStore?.category === "مستشفى" ||
-        adminSelectedStore?.category === "عيادات";
-
-  const storeCategoriesList = React.useMemo(() => {
-    const defaultCats = [
-      "وجبات رئيسية",
-      "ساندويتشات",
-      "مشويات",
-      "مقبلات",
-      "مشروبات",
-      "حلويات",
-      "عصائر",
-      "بيتزا",
-    ];
-    const set = new Set<string>(defaultCats);
-    if (adminMarketProducts && Array.isArray(adminMarketProducts)) {
-      adminMarketProducts.forEach((p) => {
-        const cat = p.menuCategory || p.category;
-        if (cat && typeof cat === "string" && cat.trim()) {
-          set.add(cat.trim());
-        }
-      });
-    }
-    return Array.from(set);
-  }, [adminMarketProducts]);
-
   const currentSection =
     adminView === "market_products"
-      ? isSelectedStoreComplex
-        ? {
-            id: "market_products",
-            label: `الكوادر الطبية: ${adminSelectedStore?.name || "المجمع الطبي"}`,
-            subtitle: "إدارة قائمة الكوادر الطبية والأطباء مع التفاصيل وأرقام الحجز الخاصة بهم",
-            icon: <Stethoscope size={24} />,
-            badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-300",
-            accentBg: "bg-emerald-500/10 text-emerald-600",
-            count: adminMarketProducts?.length || 0,
-          }
-        : {
-            id: "market_products",
-            label: `قائمة المنتجات والوجبات: ${adminSelectedStore?.name || "المتجر / المطعم"}`,
-            subtitle: "إدارة قائمة الوجبات، الأصناف، الأسعار والتفاصيل الخاصة بالمتجر",
-            icon: <ShoppingBag size={24} />,
-            badgeColor: "bg-teal-100 text-teal-800 border-teal-300",
-            accentBg: "bg-teal-500/10 text-teal-600",
-            count: adminMarketProducts?.length || 0,
-          }
-      : adminView === "offer_products"
       ? {
-          id: "offer_products",
-          label: `منتجات العرض: ${adminSelectedOffer?.title || "العرض"}`,
-          subtitle: "إدارة قائمة المنتجات والوجبات والأسعار داخل هذا العرض",
-          icon: <PackageCheck size={24} />,
-          badgeColor: "bg-purple-100 text-purple-800 border-purple-300",
-          accentBg: "bg-purple-500/10 text-purple-600",
-          count: adminOfferProducts?.length || 0,
+          id: "market_products",
+          label: `الكوادر الطبية: ${adminSelectedStore?.name || "المجمع الطبي"}`,
+          subtitle: "إدارة قائمة الكوادر الطبية والأطباء مع التفاصيل وأرقام الحجز الخاصة بهم",
+          icon: <Stethoscope size={24} />,
+          badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-300",
+          accentBg: "bg-emerald-500/10 text-emerald-600",
+          count: adminMarketProducts?.length || 0,
         }
       : navSections.find((s) => s.id === adminView);
 
@@ -586,9 +537,7 @@ export const AdminPanel = (props: AdminPanelProps) => {
               <button
                 onClick={() => {
                   if (adminView === "market_products") {
-                    setAdminView(isSelectedStoreComplex ? "medical_complexes" : "market_stores");
-                  } else if (adminView === "offer_products") {
-                    setAdminView("serviceOffers");
+                    setAdminView("medical_complexes");
                   } else {
                     setAdminView("main");
                   }
@@ -623,7 +572,7 @@ export const AdminPanel = (props: AdminPanelProps) => {
               </div>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 {adminView === "main"
-                  ? "اختر أي قسم لإدارة المحتوى بشكل منفصل ومباشر"
+                  ? "اختر أي قسم لإدارة المحتوى بشكل مباشر"
                   : `${currentSection?.count || 0} عنصر مسجل حالياً`}
               </p>
             </div>
@@ -647,153 +596,82 @@ export const AdminPanel = (props: AdminPanelProps) => {
         {adminView === "main" ? (
           /* ================= MAIN DASHBOARD SECTIONS GRID ================= */
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Quick Summary Numbers Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-4 rounded-3xl shadow-2xs">
-                <div className="flex items-center justify-between text-slate-500 mb-1">
-                  <span className="text-xs font-black">الدليل الطبي</span>
-                  <Hospital size={18} className="text-emerald-600" />
-                </div>
-                <div className="text-2xl font-black text-slate-900 dark:text-white">
-                  {marketStores?.length || 0}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-4 rounded-3xl shadow-2xs">
-                <div className="flex items-center justify-between text-slate-500 mb-1">
-                  <span className="text-xs font-black">الدليل الطبي العام</span>
-                  <Stethoscope size={18} className="text-indigo-600" />
-                </div>
-                <div className="text-2xl font-black text-slate-900 dark:text-white">
-                  {doctors?.length || 0}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-4 rounded-3xl shadow-2xs">
-                <div className="flex items-center justify-between text-slate-500 mb-1">
-                  <span className="text-xs font-black">سائقي التكسي</span>
-                  <Wrench size={18} className="text-amber-600" />
-                </div>
-                <div className="text-2xl font-black text-slate-900 dark:text-white">
-                  {taxis?.length || 0}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-4 rounded-3xl shadow-2xs">
-                <div className="flex items-center justify-between text-slate-500 mb-1">
-                  <span className="text-xs font-black">العروض والخدمات</span>
-                  <Tag size={18} className="text-purple-600" />
-                </div>
-                <div className="text-2xl font-black text-slate-900 dark:text-white">
-                  {serviceOffers?.length || 0}
-                </div>
-              </div>
-            </div>
-
-            {/* Standalone Section Buttons Grid */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={18} className="text-emerald-600" />
-                  <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-                    اقسام لوحة التحكم (انقر لفتح أي قسم)
-                  </h2>
-                </div>
-                <span className="text-xs font-bold text-slate-500">
-                  {navSections.length} أقسام تخصصية
-                </span>
-              </div>
-
-              <div className="grid grid-cols-4 gap-1.5 sm:gap-4">
-                {navSections.map((sec) => (
-                  <button
-                    key={sec.id}
-                    onClick={() => setAdminView(sec.id as any)}
-                    className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 sm:border-2 p-2 sm:p-4 rounded-xl sm:rounded-3xl flex flex-col justify-between text-right shadow-2xs hover:shadow-lg hover:border-emerald-500 dark:hover:border-emerald-500 transition-all active:scale-95 group cursor-pointer relative min-h-[110px] sm:min-h-[160px]"
-                  >
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-2 mb-1.5 sm:mb-3">
-                      <div className={`w-8 h-8 sm:w-12 sm:h-12 ${sec.accentBg} rounded-lg sm:rounded-2xl flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform`}>
-                        {sec.icon}
-                      </div>
-                      <span className={`text-[9px] sm:text-xs font-black px-1.5 sm:px-2.5 py-0.5 rounded-full border ${sec.badgeColor}`}>
-                        {sec.count}
-                      </span>
+            {/* Nav Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {navSections.map((sec) => (
+                <motion.div
+                  key={sec.id}
+                  whileHover={{ scale: 1.015, y: -2 }}
+                  whileTap={{ scale: 0.985 }}
+                  onClick={() => {
+                    setAdminView(sec.id as any);
+                    setIsAdding(false);
+                    setEditingItem(null);
+                    setFormData({});
+                  }}
+                  className="bg-white dark:bg-slate-900 border-2 border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs hover:shadow-md hover:border-emerald-500/50 dark:hover:border-emerald-500/40 transition-all cursor-pointer flex flex-col justify-between min-h-[160px] group text-right"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className={`w-14 h-14 rounded-2xl ${sec.accentBg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                      {sec.icon}
                     </div>
+                    <span className={`text-xs font-black px-3 py-1 rounded-xl border ${sec.badgeColor}`}>
+                      {sec.count} عنصر
+                    </span>
+                  </div>
 
-                    <div>
-                      <h3 className="text-[10px] sm:text-sm font-black text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-tight line-clamp-2">
-                        {sec.label}
-                      </h3>
-                      <p className="hidden sm:block text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                        {sec.subtitle}
-                      </p>
-                    </div>
-
-                    <div className="mt-2 pt-1.5 sm:pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[9px] sm:text-xs font-black text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
-                      <span className="hidden sm:inline">إدارة القسم</span>
-                      <span className="sm:hidden text-[8px]">دخول</span>
-                      <ChevronRight size={12} className="rotate-180 sm:w-4 sm:h-4" />
-                    </div>
-                  </button>
-                ))}
-              </div>
+                  <div className="mt-4">
+                    <h3 className="font-display font-black text-base sm:text-lg text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      {sec.label}
+                    </h3>
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                      {sec.subtitle}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
         ) : (
-          /* ================= STANDALONE ISOLATED SECTION VIEW ================= */
-          <div className="space-y-5 animate-in fade-in duration-300">
-            {/* Top Section Info & Large Action Bar */}
-            <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-3xl shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 ${currentSection?.accentBg || "bg-slate-100 text-slate-800"} rounded-2xl flex items-center justify-center shrink-0`}>
-                  {currentSection?.icon || <Database size={24} />}
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                    {currentSection?.label || "إدارة القسم"}
-                  </h2>
-                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                    {currentSection?.subtitle || "تعديل وإضافة البيانات"}
-                  </p>
-                </div>
+          /* ================= ACTIVE SECTION DETAIL VIEW ================= */
+          <div className="space-y-5 animate-in fade-in duration-200">
+            {/* Top Toolbar: Search + Excel Operations */}
+            <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+              {/* Search Bar */}
+              <div className="relative w-full sm:flex-1">
+                <input
+                  type="text"
+                  placeholder="ابحث بالاسم أو التفاصيل داخل هذا القسم..."
+                  value={adminSearch}
+                  onChange={(e) => setAdminSearch(e.target.value)}
+                  className="w-full h-11 pr-10 pl-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-right"
+                />
+                <Search size={18} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
 
-              {/* Large Functional Tools Bar */}
-              {!isAdding && (
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  {["doctors", "market_stores", "taxis", "serviceOffers"].includes(adminView) && (
-                    <>
-                      <button
-                        onClick={handleExport}
-                        className="h-12 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 border border-emerald-300 dark:border-emerald-800 active:scale-95 transition-all cursor-pointer shadow-xs"
-                      >
-                        <FileOutput size={18} />
-                        <span>تصدير إكسل</span>
-                      </button>
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-12 px-4 bg-blue-50 hover:bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 border border-blue-300 dark:border-blue-800 active:scale-95 transition-all cursor-pointer shadow-xs"
-                      >
-                        <FileInput size={18} />
-                        <span>استيراد إكسل</span>
-                      </button>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImport}
-                        accept=".xlsx, .xls"
-                        hidden
-                      />
-                    </>
-                  )}
-
+              {/* Excel Import / Export Toolbar for Doctors & Complexes */}
+              {(adminView === "doctors" || adminView === "medical_complexes" || adminView === "taxis") && (
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
-                    onClick={startAdd}
-                    className="h-12 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 active:scale-95 transition-all cursor-pointer shadow-md"
+                    onClick={handleExportExcel}
+                    className="flex-1 sm:flex-initial h-11 px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-black flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shrink-0"
+                    title="تصدير ملف إكسل"
                   >
-                    <Plus size={20} />
-                    <span>إضافة عنصر جديد</span>
+                    <FileOutput size={16} />
+                    <span>تصدير Excel</span>
                   </button>
+
+                  <label className="flex-1 sm:flex-initial h-11 px-3.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/80 dark:hover:bg-emerald-900 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-2xl text-xs font-black flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shrink-0">
+                    <FileInput size={16} />
+                    <span>استيراد Excel</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx, .xls"
+                      onChange={handleImportExcel}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               )}
             </div>
@@ -887,9 +765,9 @@ export const AdminPanel = (props: AdminPanelProps) => {
                   {/* File/Photo Upload Card */}
                   <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border-2 border-slate-200/80 dark:border-slate-800">
                     <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-2xl shadow-xs overflow-hidden flex items-center justify-center relative border-2 border-slate-300 dark:border-slate-700 shrink-0">
-                      {formData.image || (formData.images && formData.images[0]) ? (
+                      {formData.image || (formData.images && formData.images[0]) || formData.logoImage ? (
                         <img
-                          src={formData.image || (formData.images && formData.images[0])}
+                          src={formData.image || (formData.images && formData.images[0]) || formData.logoImage}
                           className="w-full h-full object-cover"
                           alt=""
                         />
@@ -905,11 +783,11 @@ export const AdminPanel = (props: AdminPanelProps) => {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-black text-slate-900 dark:text-white">
-                        {adminView === "market_products" && !isSelectedStoreComplex
-                          ? "صورة المنتج / الوجبة"
-                          : adminView === "market_products" && isSelectedStoreComplex
+                        {adminView === "market_products"
                           ? "صورة الطبيب / الكادر الطبي"
-                          : "صورة الغلاف / اللوجو"}
+                          : adminView === "medical_complexes"
+                          ? "شعار المجمع الطبي (لوجو)"
+                          : "صورة الغلاف / الصورة الشخصية"}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-1">
                         انقر فوق الصورة لرفع ملف جديد من جهازك
@@ -923,18 +801,12 @@ export const AdminPanel = (props: AdminPanelProps) => {
                       placeholder={
                         adminView === "notifications"
                           ? "عنوان الإشعار الرئيسي"
-                          : adminView === "offer_products"
-                          ? "اسم المنتج أو الوجبة"
                           : adminView === "market_products"
-                          ? isSelectedStoreComplex
-                            ? "اسم الطبيب كامل (مثال: د. علي صبيح)"
-                            : "اسم الوجبة أو المنتج أو الصنف"
+                          ? "اسم الطبيب كامل (مثال: د. علي صبيح)"
                           : adminView === "medical_complexes"
                           ? "اسم المجمع الطبي أو المستشفى"
-                          : adminView === "market_stores"
-                          ? "اسم المتجر أو المطعم أو النشاط التجاري"
-                          : adminView === "serviceOffers"
-                          ? "عنوان العرض الترويجي"
+                          : adminView === "banners"
+                          ? "عنوان الإعلان الترويجي"
                           : "الاسم / العنوان"
                       }
                       value={formData.name || formData.title || ""}
@@ -943,568 +815,259 @@ export const AdminPanel = (props: AdminPanelProps) => {
                       }
                     />
 
+                    {/* Doctors Specialty Selector */}
                     {adminView === "doctors" && (
-                      <>
-                        <div className="space-y-1.5 text-right">
-                          <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
-                            <span>التخصص الطبي المعتمد:</span>
-                            <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
-                              حدد من التخصصات المعتمدة
-                            </span>
-                          </label>
-                          <div className="relative">
-                            <select
-                              value={formData.specialty || formData.subtitle || ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === "__CUSTOM__") {
-                                  setFormData({ ...formData, specialty: "", subtitle: "", _isCustomSpecialty: true });
-                                } else {
-                                  setFormData({ ...formData, specialty: val, subtitle: val, _isCustomSpecialty: false });
-                                }
-                              }}
-                              className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 focus:border-indigo-500 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer appearance-none text-right"
-                              dir="rtl"
-                            >
-                              <option value="">-- اختر التخصص الطبي --</option>
-                              {doctorSpecialtiesList?.map((spec) => (
-                                <option key={spec.id} value={spec.name}>
-                                  {spec.name}
-                                </option>
-                              ))}
-                              {formData.specialty &&
-                                !doctorSpecialtiesList?.some((s) => s.name === formData.specialty) && (
-                                  <option value={formData.specialty}>{formData.specialty}</option>
-                                )}
-                              <option value="__CUSTOM__">➕ إدخال تخصص جديد يدوياً...</option>
-                            </select>
-                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                              <ChevronDown size={18} />
-                            </div>
-                          </div>
-
-                          {(formData._isCustomSpecialty ||
-                            (formData.specialty &&
-                              !doctorSpecialtiesList?.some((s) => s.name === formData.specialty))) && (
-                            <div className="pt-1.5 animate-in fade-in">
-                              <AdminInput
-                                placeholder="اكتب اسم التخصص الجديد هنا..."
-                                value={formData.specialty || formData.subtitle || ""}
-                                onChange={(v) =>
-                                  setFormData({ ...formData, specialty: v, subtitle: v })
-                                }
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        <AdminInput
-                          placeholder="العنوان ومكان العيادة"
-                          value={formData.address || formData.location || ""}
-                          onChange={(v) => setFormData({ ...formData, address: v, location: v })}
-                        />
-                        <AdminInput
-                          placeholder="رقم الهاتف والتواصل"
-                          value={formData.phone || formData.phone1 || ""}
-                          onChange={(v) => setFormData({ ...formData, phone: v, phone1: v })}
-                        />
-                        <AdminInput
-                          placeholder="رقم هاتف الحجز الخاص بالعيادة (إن وجد)"
-                          value={formData.reservationPhone || ""}
-                          onChange={(v) => setFormData({ ...formData, reservationPhone: v })}
-                        />
-                      </>
-                    )}
-
-                    {adminView === "taxis" && (
-                      <>
-                        <div className="space-y-1.5 text-right">
-                          <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
-                            <span>فئة الخدمة / المهنة:</span>
-                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
-                              اختر الفئة
-                            </span>
-                          </label>
-                          <div className="relative">
-                            <select
-                              value={formData.category || formData.carType || ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === "__CUSTOM__") {
-                                  setFormData({ ...formData, category: "", carType: "", _isCustomCategory: true });
-                                } else {
-                                  setFormData({ ...formData, category: val, carType: val, _isCustomCategory: false });
-                                }
-                              }}
-                              className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 focus:border-amber-500 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer appearance-none text-right"
-                              dir="rtl"
-                            >
-                              <option value="">-- اختر فئة الخدمة / المهنة --</option>
-                              {serviceCategoriesList?.map((cat) => (
-                                <option key={cat.id} value={cat.name}>
-                                  {cat.name}
-                                </option>
-                              ))}
-                              {(formData.category || formData.carType) &&
-                                !serviceCategoriesList?.some(
-                                  (s) => s.name === (formData.category || formData.carType)
-                                ) && (
-                                  <option value={formData.category || formData.carType}>
-                                    {formData.category || formData.carType}
-                                  </option>
-                                )}
-                              <option value="__CUSTOM__">➕ إدخال فئة جديدة يدوياً...</option>
-                            </select>
-                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                              <ChevronDown size={18} />
-                            </div>
-                          </div>
-
-                          {(formData._isCustomCategory ||
-                            ((formData.category || formData.carType) &&
-                              !serviceCategoriesList?.some(
-                                (s) => s.name === (formData.category || formData.carType)
-                              ))) && (
-                            <div className="pt-1.5 animate-in fade-in">
-                              <AdminInput
-                                placeholder="اكتب اسم الفئة الجديدة هنا..."
-                                value={formData.category || formData.carType || ""}
-                                onChange={(v) =>
-                                  setFormData({ ...formData, category: v, carType: v })
-                                }
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        <AdminInput
-                          placeholder="عنوان أو وصف الخدمة التفصيلي (مثال: سائق تاكسي / صيانة كهربائية / نجار أثاث)"
-                          value={formData.subtitle || formData.craft || ""}
-                          onChange={(v) => setFormData({ ...formData, subtitle: v, craft: v })}
-                        />
-                        <AdminInput
-                          placeholder="رقم الهاتف والواتساب"
-                          value={formData.phone || formData.phone1 || ""}
-                          onChange={(v) => setFormData({ ...formData, phone: v, phone1: v })}
-                        />
-                        <AdminInput
-                          placeholder="منطقة التواجد أو الخط الخارجي"
-                          value={formData.area || formData.location || ""}
-                          onChange={(v) => setFormData({ ...formData, area: v, location: v })}
-                        />
-                      </>
-                    )}
-
-                    {adminView === "medical_complexes" && (
-                      <>
-                        <AdminInput
-                          placeholder="العنوان والموقع (مثال: الشارع العام، قرب المستشفى العام)"
-                          value={formData.location || ""}
-                          onChange={(v) => setFormData({ ...formData, location: v })}
-                        />
-                        <AdminInput
-                          placeholder="رقم هاتف استعلامات وحجز المجمع الطبي"
-                          value={formData.phone || formData.phone1 || ""}
-                          onChange={(v) => setFormData({ ...formData, phone: v, phone1: v })}
-                        />
-                      </>
-                    )}
-
-                    {adminView === "market_stores" && (
-                      <>
-                        <div className="space-y-1.5 text-right">
-                          <label className="text-xs font-black text-slate-700 dark:text-slate-200">
-                            تصنيف المتجر / النشاط:
-                          </label>
+                      <div className="space-y-1.5 text-right">
+                        <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                          <span>التخصص الطبي المعتمد:</span>
+                          <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
+                            حدد من التخصصات المعتمدة
+                          </span>
+                        </label>
+                        <div className="relative">
                           <select
-                            value={formData.category || "مطاعم"}
-                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 focus:border-teal-500 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
+                            value={formData.specialty || formData.subtitle || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "__CUSTOM__") {
+                                setFormData({ ...formData, specialty: "", subtitle: "", _isCustomSpecialty: true });
+                              } else {
+                                setFormData({ ...formData, specialty: val, subtitle: val, _isCustomSpecialty: false });
+                              }
+                            }}
+                            className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 focus:border-indigo-500 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer appearance-none text-right"
                             dir="rtl"
                           >
-                            <option value="مطاعم">مطاعم</option>
-                            <option value="متاجر">متاجر</option>
-                            <option value="مكاتب">مكاتب</option>
+                            <option value="">-- اختر التخصص الطبي --</option>
+                            {doctorSpecialtiesList?.map((spec) => (
+                              <option key={spec.id} value={spec.name}>
+                                {spec.name}
+                              </option>
+                            ))}
+                            {formData.specialty &&
+                              !doctorSpecialtiesList?.some((s) => s.name === formData.specialty) && (
+                                <option value={formData.specialty}>{formData.specialty}</option>
+                              )}
+                            <option value="__CUSTOM__">➕ إدخال تخصص جديد يدوياً...</option>
                           </select>
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <ChevronDown size={18} />
+                          </div>
                         </div>
-                        <AdminInput
-                          placeholder="العنوان والموقع (مثال: السوق القديم، مجاور البريد)"
-                          value={formData.location || ""}
-                          onChange={(v) => setFormData({ ...formData, location: v })}
-                        />
-                        <AdminInput
-                          placeholder="رقم هاتف الطلبات والتواصل"
-                          value={formData.phone || formData.phone1 || ""}
-                          onChange={(v) => setFormData({ ...formData, phone: v, phone1: v })}
-                        />
-                      </>
+
+                        {(formData._isCustomSpecialty ||
+                          (formData.specialty &&
+                            !doctorSpecialtiesList?.some((s) => s.name === formData.specialty))) && (
+                          <div className="pt-1.5 animate-in fade-in">
+                            <AdminInput
+                              placeholder="اكتب اسم التخصص الجديد هنا..."
+                              value={formData.specialty || formData.subtitle || ""}
+                              onChange={(v) =>
+                                setFormData({ ...formData, specialty: v, subtitle: v })
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
                     )}
 
+                    {/* Complex Doctor Specialty */}
                     {adminView === "market_products" && (
-                      isSelectedStoreComplex ? (
-                        <>
-                          <div className="space-y-1.5 text-right">
-                            <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
-                              <span>التخصص الطبي للعيادة:</span>
-                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                                اختر التخصص
-                              </span>
-                            </label>
-                            <div className="relative">
-                              <select
-                                value={formData.specialty || formData.category || formData.menuCategory || ""}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (val === "__CUSTOM__") {
-                                    setFormData({ ...formData, specialty: "", category: "", menuCategory: "", _isCustomSpecialty: true });
-                                  } else {
-                                    setFormData({ ...formData, specialty: val, category: val, menuCategory: val, _isCustomSpecialty: false });
-                                  }
-                                }}
-                                className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 focus:border-emerald-500 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer appearance-none text-right"
-                                dir="rtl"
-                              >
-                                <option value="">-- حدد التخصص الطبي --</option>
-                                {doctorSpecialtiesList?.map((spec) => (
-                                  <option key={spec.id} value={spec.name}>
-                                    {spec.name}
-                                  </option>
-                                ))}
-                                {formData.specialty &&
-                                  !doctorSpecialtiesList?.some((s) => s.name === formData.specialty) && (
-                                    <option value={formData.specialty}>{formData.specialty}</option>
-                                  )}
-                                <option value="__CUSTOM__">➕ إدخال تخصص جديد يدوياً...</option>
-                              </select>
-                              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                <ChevronDown size={18} />
-                              </div>
-                            </div>
-
-                            {(formData._isCustomSpecialty ||
-                              (formData.specialty &&
-                                !doctorSpecialtiesList?.some((s) => s.name === formData.specialty))) && (
-                              <div className="pt-1.5 animate-in fade-in">
-                                <AdminInput
-                                  placeholder="اكتب التخصص الجديد للعيادة..."
-                                  value={formData.specialty || formData.category || ""}
-                                  onChange={(v) =>
-                                    setFormData({
-                                      ...formData,
-                                      specialty: v,
-                                      category: v,
-                                      menuCategory: v,
-                                    })
-                                  }
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          <AdminInput
-                            placeholder="رقم هاتف حجز العيادة داخل المجمع"
-                            value={formData.reservationPhone || formData.phone || ""}
-                            onChange={(v) => setFormData({ ...formData, reservationPhone: v, phone: v })}
-                          />
-
-                          <AdminInput
-                            placeholder="ملاحظة اختيارية بجوار زر الحجز (مثال: الطابق الثاني / جناح الاستشاريين)"
-                            value={formData.note || ""}
-                            onChange={(v) => setFormData({ ...formData, note: v })}
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <AdminInput
-                            placeholder="السعر (مثال: 5000 د.ع أو 7500)"
-                            value={formData.price !== undefined ? String(formData.price) : ""}
-                            onChange={(v) => setFormData({ ...formData, price: v })}
-                          />
-
-                          <div className="space-y-2 text-right sm:col-span-2">
-                            <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
-                              <span>قسم القائمة / التصنيف:</span>
-                              <span className="text-[10px] text-teal-600 dark:text-teal-400 font-bold">
-                                اختر التصنيف بضغطة زر أو أضف تصنيفاً جديداً
-                              </span>
-                            </label>
-
-                            {/* Category Tabs list */}
-                            <div className="flex items-center gap-1.5 flex-wrap bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border-2 border-slate-200 dark:border-slate-800">
-                              {storeCategoriesList.map((cat) => {
-                                const currentCat = formData.menuCategory || formData.category || "";
-                                const isSelected = currentCat === cat && !formData._isCustomCategory;
-                                return (
-                                  <button
-                                    key={cat}
-                                    type="button"
-                                    onClick={() => {
-                                      setFormData({
-                                        ...formData,
-                                        menuCategory: cat,
-                                        category: cat,
-                                        _isCustomCategory: false,
-                                      });
-                                    }}
-                                    className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                                      isSelected
-                                        ? "bg-teal-600 text-white shadow-xs scale-102"
-                                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800"
-                                    }`}
-                                  >
-                                    {isSelected && <Check size={14} />}
-                                    <span>{cat}</span>
-                                  </button>
-                                );
-                              })}
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFormData({
-                                    ...formData,
-                                    _isCustomCategory: true,
-                                    menuCategory: "",
-                                    category: "",
-                                  });
-                                }}
-                                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                                  formData._isCustomCategory
-                                    ? "bg-amber-500 text-white shadow-xs"
-                                    : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 border border-amber-300 dark:border-amber-800"
-                                }`}
-                              >
-                                <Plus size={14} />
-                                <span>إضافة تصنيف جديد</span>
-                              </button>
-                            </div>
-
-                            {(formData._isCustomCategory ||
-                              ((formData.menuCategory || formData.category) &&
-                                !storeCategoriesList.includes(formData.menuCategory || formData.category))) && (
-                              <div className="pt-1.5 animate-in fade-in">
-                                <AdminInput
-                                  placeholder="اكتب اسم التصنيف الجديد هنا (مثال: وجبات سريعة / برجر)..."
-                                  value={formData.menuCategory || formData.category || ""}
-                                  onChange={(v) =>
-                                    setFormData({
-                                      ...formData,
-                                      menuCategory: v,
-                                      category: v,
-                                    })
-                                  }
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      )
+                      <AdminInput
+                        placeholder="التخصص الطبي (مثال: أخصائي جراحة عامة)"
+                        value={formData.specialty || formData.subtitle || formData.menuCategory || ""}
+                        onChange={(v) =>
+                          setFormData({ ...formData, specialty: v, subtitle: v, menuCategory: v })
+                        }
+                      />
                     )}
 
-                    {adminView === "offer_products" && (
-                      <>
-                        <AdminInput
-                          placeholder="السعر (مثال: 5000 د.ع أو مجاني / حسب الطلب)"
-                          value={formData.price !== undefined ? String(formData.price) : ""}
-                          onChange={(v) => setFormData({ ...formData, price: v })}
-                        />
-                      </>
+                    {/* Medical Complex Category */}
+                    {adminView === "medical_complexes" && (
+                      <div className="space-y-1.5 text-right">
+                        <label className="text-xs font-black text-slate-700 dark:text-slate-200">
+                          نوع المنشأة الطبية:
+                        </label>
+                        <select
+                          value={formData.category || "مجمع طبي"}
+                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                          className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none cursor-pointer text-right"
+                        >
+                          <option value="مجمع طبي">مجمع طبي متكامل</option>
+                          <option value="مستشفى">مستشفى أو مركز تخصصي</option>
+                          <option value="عيادات">عيادات استشارية</option>
+                          <option value="مختبر">مختبر تحليلات مرضية</option>
+                          <option value="صيدلية">صيدلية</option>
+                        </select>
+                      </div>
                     )}
 
-                    {adminView === "serviceOffers" && (
-                      <>
-                        <AdminInput
-                          placeholder="قيمة الخصم أو السعر الجديد (مثال: خصم 25% أو 15,000 د.ع)"
-                          value={formData.price || ""}
-                          onChange={(v) => setFormData({ ...formData, price: v })}
-                        />
-                        <AdminInput
-                          placeholder="رقم التواصل والواتساب"
-                          value={formData.whatsappNumber || formData.phone || ""}
-                          onChange={(v) => setFormData({ ...formData, whatsappNumber: v, phone: v })}
-                        />
-                      </>
-                    )}
-
-                    {adminView === "banners" && (
-                      <div className="sm:col-span-2 space-y-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 text-right">
-                        <div className="space-y-1">
-                          <label className="text-xs font-black text-slate-800 dark:text-slate-200">
-                            نوع إجراء النقر على البنر:
-                          </label>
+                    {/* Taxi & Service Category Selector */}
+                    {adminView === "taxis" && (
+                      <div className="space-y-1.5 text-right">
+                        <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                          <span>الفئة / المهنة:</span>
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                            حدد المهنة أو وسيلة النقل
+                          </span>
+                        </label>
+                        <div className="relative">
                           <select
-                            value={formData.type || "internal"}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                type: e.target.value as any,
-                                targetType: e.target.value === "internal" ? (formData.targetType || "doctor") : undefined,
-                              })
-                            }
-                            className="w-full h-12 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-3 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                            value={formData.category || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "__CUSTOM__") {
+                                setFormData({ ...formData, category: "", _isCustomCategory: true });
+                              } else {
+                                setFormData({ ...formData, category: val, _isCustomCategory: false });
+                              }
+                            }}
+                            className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 focus:border-amber-500 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer appearance-none text-right"
+                            dir="rtl"
                           >
-                            <option value="internal">ربط داخلي ببطاقة (طبيب / مجمع طبي / مطعم ومتجر / عرض / إعلان)</option>
-                            <option value="external">فتح رابط خارجي (موقع / فيسبوك / واتساب)</option>
-                            <option value="text">عرض نص تفصيلي داخل التطبيق</option>
+                            <option value="">-- اختر الفئة / المهنة --</option>
+                            {serviceCategoriesList?.map((cat) => (
+                              <option key={cat.id} value={cat.name}>
+                                {cat.name}
+                              </option>
+                            ))}
+                            {formData.category &&
+                              !serviceCategoriesList?.some((s) => s.name === formData.category) && (
+                                <option value={formData.category}>{formData.category}</option>
+                              )}
+                            <option value="__CUSTOM__">➕ إدخال فئة جديدة يدوياً...</option>
                           </select>
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <ChevronDown size={18} />
+                          </div>
                         </div>
 
-                        {formData.type === "external" && (
-                          <AdminInput
-                            placeholder="رابط الموقع الخارجي (https://...)"
-                            value={formData.url || ""}
-                            onChange={(v) => setFormData({ ...formData, url: v })}
-                          />
-                        )}
-
-                        {(formData.type === "internal" || !formData.type) && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <label className="text-xs font-black text-slate-800 dark:text-slate-200">
-                                اختر القسم المراد الربط به:
-                              </label>
-                              <select
-                                value={formData.targetType || "doctor"}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    targetType: e.target.value as any,
-                                    targetId: "",
-                                  })
-                                }
-                                className="w-full h-12 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-3 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
-                              >
-                                <option value="doctor">بطاقة طبيب</option>
-                                <option value="medical_complex">مجمع طبي / مستشفى</option>
-                                <option value="restaurant">مطعم / متجر</option>
-                                <option value="serviceOffers">عرض وخصم خدمات</option>
-                                <option value="govAnnouncement">تنبيه / إعلان حكومي</option>
-                              </select>
-                            </div>
-
-                            <div className="space-y-1">
-                              <label className="text-xs font-black text-slate-800 dark:text-slate-200">
-                                اختر البطاقة المحددة:
-                              </label>
-                              <select
-                                value={formData.targetId || ""}
-                                onChange={(e) => setFormData({ ...formData, targetId: e.target.value })}
-                                className="w-full h-12 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-3 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
-                              >
-                                <option value="">-- اختر بطاقة من القائمة --</option>
-                                {formData.targetType === "doctor" &&
-                                  doctors.map((doc) => (
-                                    <option key={doc.id} value={doc.id}>
-                                      {doc.name} {doc.subtitle || (doc as any).specialty ? `(${doc.subtitle || (doc as any).specialty})` : ""}
-                                    </option>
-                                  ))}
-                                {formData.targetType === "medical_complex" &&
-                                  (medicalComplexes || []).map((complex) => (
-                                    <option key={complex.id} value={complex.id}>
-                                      {complex.name} {complex.location ? `(${complex.location})` : ""}
-                                    </option>
-                                  ))}
-                                {formData.targetType === "restaurant" &&
-                                  marketStores.map((store) => (
-                                    <option key={store.id} value={store.id}>
-                                      {store.name} {store.category ? `(${store.category})` : ""}
-                                    </option>
-                                  ))}
-                                {formData.targetType === "serviceOffers" &&
-                                  serviceOffers.map((offer) => (
-                                    <option key={offer.id} value={offer.title || offer.name || offer.id}>
-                                      {offer.title || offer.name} {offer.price ? `(${offer.price})` : ""}
-                                    </option>
-                                  ))}
-                                {formData.targetType === "govAnnouncement" &&
-                                  (govAnnouncements || []).map((gov) => (
-                                    <option key={gov.id} value={gov.id}>
-                                      {gov.title}
-                                    </option>
-                                  ))}
-                              </select>
-                            </div>
+                        {(formData._isCustomCategory ||
+                          (formData.category &&
+                            !serviceCategoriesList?.some((s) => s.name === formData.category))) && (
+                          <div className="pt-1.5 animate-in fade-in">
+                            <AdminInput
+                              placeholder="اكتب اسم الفئة الجديدة هنا..."
+                              value={formData.category || ""}
+                              onChange={(v) => setFormData({ ...formData, category: v })}
+                            />
                           </div>
                         )}
                       </div>
                     )}
 
-                    {adminView === "notifications" && (
-                      <div className="sm:col-span-2">
-                        <AdminTextarea
-                          placeholder="نص رسالة الإشعار الفورية..."
-                          value={formData.message || ""}
-                          onChange={(v) => setFormData({ ...formData, message: v })}
-                        />
-                      </div>
+                    {/* Phones & Contacts */}
+                    {adminView !== "notifications" && adminView !== "banners" && (
+                      <AdminInput
+                        placeholder="رقم الهاتف الأساسي"
+                        value={formData.phone1 || formData.phone || ""}
+                        onChange={(v) =>
+                          setFormData({ ...formData, phone1: v, phone: v })
+                        }
+                      />
+                    )}
+
+                    {/* Reservation phone for doctors */}
+                    {(adminView === "doctors" || adminView === "market_products") && (
+                      <AdminInput
+                        placeholder="رقم الحجز المباشر (اختياري)"
+                        value={formData.reservationPhone || ""}
+                        onChange={(v) =>
+                          setFormData({ ...formData, reservationPhone: v })
+                        }
+                      />
+                    )}
+
+                    {/* Working days for complex doctors */}
+                    {adminView === "market_products" && (
+                      <AdminInput
+                        placeholder="أيام وأوقات الدوام (مثال: السبت إلى الخميس 4-8 مساءً)"
+                        value={formData.workingDays || ""}
+                        onChange={(v) =>
+                          setFormData({ ...formData, workingDays: v })
+                        }
+                      />
+                    )}
+
+                    {/* Location */}
+                    {adminView !== "notifications" && adminView !== "banners" && (
+                      <AdminInput
+                        placeholder="الموقع / العنوان (مثال: الشرقاط - شارع الأطباء)"
+                        value={formData.location || ""}
+                        onChange={(v) =>
+                          setFormData({ ...formData, location: v })
+                        }
+                      />
+                    )}
+
+                    {/* WhatsApp */}
+                    {(adminView === "medical_complexes" || adminView === "taxis") && (
+                      <AdminInput
+                        placeholder="رقم الواتساب (مثال: 07701234567)"
+                        value={formData.whatsapp || formData.whatsappNumber || ""}
+                        onChange={(v) =>
+                          setFormData({ ...formData, whatsapp: v, whatsappNumber: v })
+                        }
+                      />
+                    )}
+
+                    {/* Taxi Car Type */}
+                    {adminView === "taxis" && (
+                      <AdminInput
+                        placeholder="نوع السيارة / وسيلة النقل أو تفاصيل المهنة"
+                        value={formData.carType || ""}
+                        onChange={(v) =>
+                          setFormData({ ...formData, carType: v })
+                        }
+                      />
                     )}
                   </div>
 
-                  {adminView !== "notifications" && adminView !== "offer_products" && (
-                    <AdminTextarea
-                      placeholder={
-                        adminView === "market_products" && !isSelectedStoreComplex
-                          ? "الوصف التفصيلي أو المكونات (اختياري - غير مطلوب)"
-                          : "الوصف التفصيلي أو الشرح والملاحظات وأوقات العمل..."
-                      }
-                      value={formData.description || formData.notes || ""}
-                      onChange={(v) => setFormData({ ...formData, description: v, notes: v })}
-                    />
-                  )}
-
-                  {/* Toggle Option for Show in Home/Carousel for Medical Complexes */}
-                  {adminView === "medical_complexes" && (
-                    <div
-                      onClick={() =>
+                  {/* Description / Message Area */}
+                  <div className="space-y-1.5 text-right">
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-200">
+                      {adminView === "notifications" ? "نص الإشعار والتفاصيل:" : "التفاصيل والملاحظات:"}
+                    </label>
+                    <textarea
+                      placeholder="اكتب هنا كافة التفاصيل والملاحظات..."
+                      rows={3}
+                      value={formData.description || formData.message || formData.content || ""}
+                      onChange={(e) =>
                         setFormData({
                           ...formData,
-                          showInHome: formData.showInHome === false ? true : false,
+                          description: e.target.value,
+                          message: e.target.value,
+                          content: e.target.value,
                         })
                       }
-                      className={`p-4 rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all ${
-                        formData.showInHome !== false
-                          ? "bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-200"
-                          : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                            formData.showInHome !== false
-                              ? "bg-emerald-500 text-white"
-                              : "bg-slate-200 dark:bg-slate-800 text-slate-500"
-                          }`}
-                        >
-                          <Sparkles size={20} />
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs sm:text-sm font-black">
-                            إظهار ضمن الشريط الأفقي المميز في الصفحة الرئيسية
-                          </div>
-                          <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
-                            عند تفعيل هذا الخيار، يظهر العنصر في شريط البطاقات المميزة بأعلى الصفحة
-                          </div>
-                        </div>
-                      </div>
+                      className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 transition-all text-right resize-none"
+                    />
+                  </div>
+
+                  {/* Show in Home Checkbox */}
+                  {adminView !== "notifications" && adminView !== "banners" && (
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.showInHome !== false}
                         onChange={(e) =>
                           setFormData({ ...formData, showInHome: e.target.checked })
                         }
-                        className="w-5 h-5 accent-emerald-600 rounded-md cursor-pointer shrink-0"
+                        className="w-5 h-5 rounded-lg text-emerald-600 focus:ring-emerald-500"
                       />
-                    </div>
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                        عرض هذا العنصر في الصفحة الرئيسية للتطبيق
+                      </span>
+                    </label>
                   )}
 
-                  {/* LARGE HIGH-VISIBILITY FORM SAVE & CANCEL BUTTONS */}
-                  <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-3 pt-2">
                     <button
                       onClick={saveItem}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-14 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-md"
+                      className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
                     >
-                      <Check size={22} />
-                      <span>حفظ البيانات الآن</span>
+                      <span>حفظ البيانات</span>
                     </button>
                     <button
                       onClick={() => {
@@ -1512,571 +1075,387 @@ export const AdminPanel = (props: AdminPanelProps) => {
                         setEditingItem(null);
                         setFormData({});
                       }}
-                      className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 h-14 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+                      className="px-6 h-12 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl font-black text-sm transition-all active:scale-95 cursor-pointer"
                     >
-                      <X size={20} />
-                      <span>إلغاء التعديل</span>
+                      إلغاء
                     </button>
                   </div>
                 </div>
               </div>
-            ) : adminView === "doctors" && doctorSubTab === "specialties" ? (
-              /* Specialties Management Section */
-              <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Add Specialty Card */}
-                <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/30 dark:border-emerald-500/20 p-5 rounded-3xl shadow-xs space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                        <Plus size={20} />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                          إضافة تخصص طبي جديد
-                        </h3>
-                        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                          سيظهر التخصص مباشرة في قوائم الاختيار وفلاتر البحث
-                        </p>
-                      </div>
-                    </div>
+            ) : null}
 
-                    <button
-                      onClick={handleResetDefaultSpecialties}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                      title="استعادة قائمة التخصصات الافتراضية"
-                    >
-                      <RotateCcw size={14} />
-                      <span className="hidden sm:inline">استعادة التخصصات الشاملة</span>
-                    </button>
+            {/* Specialties Management Panel (When in Specialties Sub-Tab) */}
+            {adminView === "doctors" && doctorSubTab === "specialties" && (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div>
+                    <h3 className="font-display font-black text-slate-900 dark:text-white text-base">
+                      إدارة التخصصات الطبية المعتمدة
+                    </h3>
+                    <p className="text-xs text-slate-400 font-bold">
+                      أضف أو عدّل التخصصات التي تظهر في قوائم تصفية الأطباء
+                    </p>
                   </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2.5">
-                    <input
-                      type="text"
-                      placeholder="اسم التخصص (مثال: أخصائي جراحة عامة، باطنية وقلبية، طب وجراحة العيون...)"
-                      value={newSpecialtyName}
-                      onChange={(e) => setNewSpecialtyName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddSpecialty();
-                      }}
-                      className="flex-1 h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-right"
-                      dir="rtl"
-                    />
-                    <button
-                      onClick={handleAddSpecialty}
-                      className="h-12 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-xs shrink-0"
-                    >
-                      <Plus size={18} />
-                      <span>إضافة التخصص</span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleResetDefaultSpecialties}
+                    className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-black flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <RotateCcw size={14} />
+                    <span>استعادة التخصصات الافتراضية</span>
+                  </button>
                 </div>
 
-                {/* Search & Specialties Grid */}
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                      size={18}
-                    />
-                    <input
-                      type="text"
-                      placeholder="ابحث في التخصصات الطبية..."
-                      className="w-full h-12 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl pr-11 pl-4 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-2xs text-right"
-                      value={specialtySearch}
-                      onChange={(e) => setSpecialtySearch(e.target.value)}
-                    />
-                    {specialtySearch && (
-                      <button
-                        onClick={() => setSpecialtySearch("")}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                      >
-                        <X size={16} />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Specialties List */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {(() => {
-                      const filteredSpecs = (doctorSpecialtiesList || []).filter((s) =>
-                        s.name.toLowerCase().includes(specialtySearch.toLowerCase())
-                      );
-
-                      if (filteredSpecs.length === 0) {
-                        return (
-                          <div className="col-span-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-8 rounded-3xl text-center text-slate-500 space-y-2">
-                            <Tag size={36} className="mx-auto opacity-30" />
-                            <p className="text-sm font-black">لا توجد تخصصات مطابقة للبحث</p>
-                            <p className="text-xs">أضف تخصص جديد باستخدام الحقل بالأعلى</p>
-                          </div>
-                        );
-                      }
-
-                      return filteredSpecs.map((spec) => {
-                        const isEditing = editingSpecialtyId === spec.id;
-                        // Count doctors with this specialty
-                        const docCount = doctors.filter(
-                          (d) =>
-                            d.subtitle?.trim().toLowerCase() === spec.name.trim().toLowerCase() ||
-                            (d as any).specialty?.trim().toLowerCase() === spec.name.trim().toLowerCase()
-                        ).length;
-
-                        return (
-                          <div
-                            key={spec.id}
-                            className="bg-white dark:bg-slate-900 border-2 border-slate-200/90 dark:border-slate-800 p-3.5 rounded-2xl flex items-center justify-between gap-2 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all text-right"
-                          >
-                            {isEditing ? (
-                              <div className="flex items-center gap-1.5 flex-1">
-                                <input
-                                  type="text"
-                                  value={editingSpecialtyName}
-                                  onChange={(e) => setEditingSpecialtyName(e.target.value)}
-                                  className="flex-1 h-9 px-3 bg-slate-50 dark:bg-slate-950 border border-emerald-500 rounded-xl text-xs font-bold text-slate-900 dark:text-white outline-none"
-                                  dir="rtl"
-                                  autoFocus
-                                />
-                                <button
-                                  onClick={() => handleUpdateSpecialty(spec.id)}
-                                  className="w-8 h-8 bg-emerald-600 text-white rounded-xl flex items-center justify-center shrink-0 hover:bg-emerald-700"
-                                >
-                                  <Check size={16} />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setEditingSpecialtyId(null);
-                                    setEditingSpecialtyName("");
-                                  }}
-                                  className="w-8 h-8 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl flex items-center justify-center shrink-0"
-                                >
-                                  <X size={16} />
-                                </button>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="min-w-0 flex-1">
-                                  <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 truncate">
-                                    {spec.name}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
-                                      <Stethoscope size={10} />
-                                      <span>{docCount} طبيب</span>
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <button
-                                    onClick={() => {
-                                      setEditingSpecialtyId(spec.id);
-                                      setEditingSpecialtyName(spec.name);
-                                    }}
-                                    className="w-8 h-8 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-slate-700 rounded-xl flex items-center justify-center transition-all cursor-pointer"
-                                    title="تعديل اسم التخصص"
-                                  >
-                                    <Edit3 size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteSpecialty(spec.id, spec.name)}
-                                    className="w-8 h-8 bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl flex items-center justify-center transition-all cursor-pointer"
-                                    title="حذف التخصص"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })
-                    })()}
-                  </div>
-                </div>
-              </div>
-            ) : adminView === "taxis" && serviceSubTab === "categories" ? (
-              /* Service Categories Management Section */
-              <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Add Service Category Card */}
-                <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/30 dark:border-emerald-500/20 p-5 rounded-3xl shadow-xs space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                        <Plus size={20} />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                          إضافة فئة أو مهنة خدمة جديدة
-                        </h3>
-                        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                          ستظهر الفئة مباشرة في فلتر الدليل الخدمي وقائمة الاختيار عند إضافة بطاقة
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={handleResetDefaultServiceCategories}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                      title="استعادة الفئات الافتراضية"
-                    >
-                      <RotateCcw size={14} />
-                      <span className="hidden sm:inline">استعادة الفئات الافتراضية</span>
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2.5">
-                    <input
-                      type="text"
-                      placeholder="اسم الفئة أو المهنة (مثال: صيانة ومولدات، سواق تكسي ونقل، حرفيين ومهن حرة...)"
-                      value={newServiceCategoryName}
-                      onChange={(e) => setNewServiceCategoryName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddServiceCategory();
-                      }}
-                      className="flex-1 h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-right"
-                      dir="rtl"
-                    />
-                    <button
-                      onClick={handleAddServiceCategory}
-                      className="h-12 px-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-xs shrink-0"
-                    >
-                      <Plus size={18} />
-                      <span>إضافة الفئة</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Search & Categories Grid */}
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                      size={18}
-                    />
-                    <input
-                      type="text"
-                      placeholder="ابحث في فئات المهن والخدمات..."
-                      className="w-full h-12 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl pr-11 pl-4 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-2xs text-right"
-                      value={serviceCategorySearch}
-                      onChange={(e) => setServiceCategorySearch(e.target.value)}
-                    />
-                    {serviceCategorySearch && (
-                      <button
-                        onClick={() => setServiceCategorySearch("")}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                      >
-                        <X size={16} />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Service Categories List */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {(() => {
-                      const filteredCats = (serviceCategoriesList || []).filter((s) =>
-                        s.name.toLowerCase().includes(serviceCategorySearch.toLowerCase())
-                      );
-
-                      if (filteredCats.length === 0) {
-                        return (
-                          <div className="col-span-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-8 rounded-3xl text-center text-slate-500 space-y-2">
-                            <Tag size={36} className="mx-auto opacity-30" />
-                            <p className="text-sm font-black">لا توجد فئات مطابقة للبحث</p>
-                            <p className="text-xs">أضف فئة جديدة باستخدام الحقل بالأعلى</p>
-                          </div>
-                        );
-                      }
-
-                      return filteredCats.map((cat) => {
-                        const isEditing = editingServiceCategoryId === cat.id;
-                        const count = taxis.filter(
-                          (t) =>
-                            (t.category || t.carType)?.trim().toLowerCase() === cat.name.trim().toLowerCase()
-                        ).length;
-
-                        return (
-                          <div
-                            key={cat.id}
-                            className="bg-white dark:bg-slate-900 border-2 border-slate-200/90 dark:border-slate-800 p-3.5 rounded-2xl flex items-center justify-between gap-2 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all text-right"
-                          >
-                            {isEditing ? (
-                              <div className="flex items-center gap-1.5 flex-1">
-                                <input
-                                  type="text"
-                                  value={editingServiceCategoryName}
-                                  onChange={(e) => setEditingServiceCategoryName(e.target.value)}
-                                  className="flex-1 h-9 px-3 bg-slate-50 dark:bg-slate-950 border border-emerald-500 rounded-xl text-xs font-bold text-slate-900 dark:text-white outline-none"
-                                  dir="rtl"
-                                  autoFocus
-                                />
-                                <button
-                                  onClick={() => handleUpdateServiceCategory(cat.id)}
-                                  className="w-8 h-8 bg-emerald-600 text-white rounded-xl flex items-center justify-center shrink-0 hover:bg-emerald-700"
-                                >
-                                  <Check size={16} />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setEditingServiceCategoryId(null);
-                                    setEditingServiceCategoryName("");
-                                  }}
-                                  className="w-8 h-8 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl flex items-center justify-center shrink-0"
-                                >
-                                  <X size={16} />
-                                </button>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="min-w-0 flex-1">
-                                  <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 truncate">
-                                    {cat.name}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
-                                      <Wrench size={10} />
-                                      <span>{count} بطاقة مسجلة</span>
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <button
-                                    onClick={() => {
-                                      setEditingServiceCategoryId(cat.id);
-                                      setEditingServiceCategoryName(cat.name);
-                                    }}
-                                    className="w-8 h-8 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/50 hover:text-amber-600 rounded-xl flex items-center justify-center transition-all cursor-pointer"
-                                    title="تعديل اسم الفئة"
-                                  >
-                                    <Edit3 size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteServiceCategory(cat.id, cat.name)}
-                                    className="w-8 h-8 bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl flex items-center justify-center transition-all cursor-pointer"
-                                    title="حذف الفئة"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })
-                    })()}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Items Data List Grid */
-              <div className="space-y-4">
-                {/* Search Bar Input */}
-                <div className="relative">
-                  <Search
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    size={20}
-                  />
+                {/* Add New Specialty Bar */}
+                <div className="flex items-center gap-2">
                   <input
                     type="text"
-                    placeholder="ابحث برقم الهاتف، الاسم، أو التفاصيل..."
-                    className="w-full h-13 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl pr-12 pl-4 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-2xs text-right"
-                    value={adminSearch}
-                    onChange={(e) => setAdminSearch(e.target.value)}
+                    placeholder="اكتب اسم التخصص الطبي الجديد..."
+                    value={newSpecialtyName}
+                    onChange={(e) => setNewSpecialtyName(e.target.value)}
+                    className="flex-1 h-12 px-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-right"
                   />
-                  {adminSearch && (
-                    <button
-                      onClick={() => setAdminSearch("")}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                    >
-                      <X size={18} />
-                    </button>
-                  )}
+                  <button
+                    onClick={handleAddSpecialty}
+                    className="h-12 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black flex items-center gap-2 active:scale-95 transition-all cursor-pointer shrink-0"
+                  >
+                    <Plus size={18} />
+                    <span>إضافة</span>
+                  </button>
                 </div>
 
-                {/* Grid of Items */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-right">
-                  {(() => {
-                    let items: any[] = [];
-                    if (adminView === "doctors") items = doctors;
-                    else if (adminView === "medical_complexes") items = medicalComplexes || [];
-                    else if (adminView === "taxis") items = taxis;
-                    else if (adminView === "serviceOffers") items = serviceOffers;
-                    else if (adminView === "notifications") items = notifications;
-                    else if (adminView === "market_stores") items = marketStores;
-                    else if (adminView === "market_products") items = adminMarketProducts;
-                    else if (adminView === "offer_products") items = adminOfferProducts;
-                    else items = banners || [];
+                {/* Search Specialties */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="ابحث في التخصصات..."
+                    value={specialtySearch}
+                    onChange={(e) => setSpecialtySearch(e.target.value)}
+                    className="w-full h-10 pr-9 pl-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 text-right"
+                  />
+                  <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                </div>
 
-                    let filtered = (items || []).filter((i: any) =>
-                      (i.name || i.title || i.description || i.message || "")
-                        .toLowerCase()
-                        .includes(adminSearch.toLowerCase()),
+                {/* Specialties Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[420px] overflow-y-auto">
+                  {doctorSpecialtiesList
+                    ?.filter((s) => !specialtySearch || s.name.includes(specialtySearch))
+                    .map((spec) => (
+                      <div
+                        key={spec.id}
+                        className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-2"
+                      >
+                        {editingSpecialtyId === spec.id ? (
+                          <div className="flex items-center gap-2 flex-1">
+                            <input
+                              type="text"
+                              value={editingSpecialtyName}
+                              onChange={(e) => setEditingSpecialtyName(e.target.value)}
+                              className="flex-1 h-8 px-2 bg-white dark:bg-slate-800 border rounded-lg text-xs font-bold text-right"
+                            />
+                            <button
+                              onClick={() => handleUpdateSpecialty(spec.id)}
+                              className="px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-black rounded-lg"
+                            >
+                              حفظ
+                            </button>
+                            <button
+                              onClick={() => setEditingSpecialtyId(null)}
+                              className="px-2 py-1 bg-slate-200 text-slate-700 text-[10px] font-black rounded-lg"
+                            >
+                              إلغاء
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                              {spec.name}
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => {
+                                  setEditingSpecialtyId(spec.id);
+                                  setEditingSpecialtyName(spec.name);
+                                }}
+                                className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-all"
+                                title="تعديل"
+                              >
+                                <Edit3 size={13} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSpecialty(spec.id, spec.name)}
+                                className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950/60 hover:bg-rose-200 text-rose-600 dark:text-rose-400 flex items-center justify-center transition-all"
+                                title="حذف"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Service Categories Management Panel (When in Categories Sub-Tab) */}
+            {adminView === "taxis" && serviceSubTab === "categories" && (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div>
+                    <h3 className="font-display font-black text-slate-900 dark:text-white text-base">
+                      إدارة فئات الخدمات والمهن
+                    </h3>
+                    <p className="text-xs text-slate-400 font-bold">
+                      أضف أو عدّل الفئات والمهن الحرفية ووسائل النقل
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleResetDefaultServiceCategories}
+                    className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-black flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <RotateCcw size={14} />
+                    <span>استعادة الفئات الافتراضية</span>
+                  </button>
+                </div>
+
+                {/* Add New Category Bar */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="اكتب اسم الفئة أو المهنة الجديدة..."
+                    value={newServiceCategoryName}
+                    onChange={(e) => setNewServiceCategoryName(e.target.value)}
+                    className="flex-1 h-12 px-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-right"
+                  />
+                  <button
+                    onClick={handleAddServiceCategory}
+                    className="h-12 px-5 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl text-xs font-black flex items-center gap-2 active:scale-95 transition-all cursor-pointer shrink-0"
+                  >
+                    <Plus size={18} />
+                    <span>إضافة</span>
+                  </button>
+                </div>
+
+                {/* Search Service Categories */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="ابحث في الفئات والمهن..."
+                    value={serviceCategorySearch}
+                    onChange={(e) => setServiceCategorySearch(e.target.value)}
+                    className="w-full h-10 pr-9 pl-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 text-right"
+                  />
+                  <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                </div>
+
+                {/* Categories Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[420px] overflow-y-auto">
+                  {serviceCategoriesList
+                    ?.filter((s) => !serviceCategorySearch || s.name.includes(serviceCategorySearch))
+                    .map((cat) => (
+                      <div
+                        key={cat.id}
+                        className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-2"
+                      >
+                        {editingServiceCategoryId === cat.id ? (
+                          <div className="flex items-center gap-2 flex-1">
+                            <input
+                              type="text"
+                              value={editingServiceCategoryName}
+                              onChange={(e) => setEditingServiceCategoryName(e.target.value)}
+                              className="flex-1 h-8 px-2 bg-white dark:bg-slate-800 border rounded-lg text-xs font-bold text-right"
+                            />
+                            <button
+                              onClick={() => handleUpdateServiceCategory(cat.id)}
+                              className="px-2.5 py-1 bg-amber-600 text-white text-[10px] font-black rounded-lg"
+                            >
+                              حفظ
+                            </button>
+                            <button
+                              onClick={() => setEditingServiceCategoryId(null)}
+                              className="px-2 py-1 bg-slate-200 text-slate-700 text-[10px] font-black rounded-lg"
+                            >
+                              إلغاء
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                              {cat.name}
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => {
+                                  setEditingServiceCategoryId(cat.id);
+                                  setEditingServiceCategoryName(cat.name);
+                                }}
+                                className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-all"
+                                title="تعديل"
+                              >
+                                <Edit3 size={13} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteServiceCategory(cat.id, cat.name)}
+                                className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950/60 hover:bg-rose-200 text-rose-600 dark:text-rose-400 flex items-center justify-center transition-all"
+                                title="حذف"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Normal Items List (Doctors, Complexes, Notifications, Banners, Taxis) */}
+            {(!isAdding &&
+              !(adminView === "doctors" && doctorSubTab === "specialties") &&
+              !(adminView === "taxis" && serviceSubTab === "categories")) && (
+              <div className="space-y-3">
+                {(() => {
+                  let items: any[] = [];
+                  if (adminView === "doctors") items = doctors;
+                  else if (adminView === "medical_complexes") items = medicalComplexes;
+                  else if (adminView === "market_products") items = adminMarketProducts;
+                  else if (adminView === "banners") items = banners;
+                  else if (adminView === "taxis") items = taxis;
+                  else if (adminView === "notifications") items = notifications;
+
+                  const filtered = items.filter((item) => {
+                    if (!adminSearch.trim()) return true;
+                    const q = adminSearch.toLowerCase().trim();
+                    return (
+                      (item.name && item.name.toLowerCase().includes(q)) ||
+                      (item.title && item.title.toLowerCase().includes(q)) ||
+                      (item.subtitle && item.subtitle.toLowerCase().includes(q)) ||
+                      (item.specialty && item.specialty.toLowerCase().includes(q)) ||
+                      (item.phone1 && item.phone1.includes(q)) ||
+                      (item.phone && item.phone.includes(q)) ||
+                      (item.location && item.location.toLowerCase().includes(q)) ||
+                      (item.description && item.description.toLowerCase().includes(q)) ||
+                      (item.message && item.message.toLowerCase().includes(q))
                     );
+                  });
 
-                    if (filtered.length === 0) {
-                      return (
-                        <div className="sm:col-span-2 lg:col-span-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-10 rounded-3xl text-center text-slate-500 space-y-3">
-                          <Database size={40} className="mx-auto opacity-30" />
-                          <p className="text-sm font-black">لا توجد عناصر مسجلة في هذا القسم</p>
-                          <p className="text-xs">انقر فوق زر (إضافة عنصر جديد) بالأعلى لإدخال البيانات</p>
-                        </div>
-                      );
-                    }
-
-                    return filtered.map((item: any) => {
-                      const isExpanded = expandedItemId === item.id;
-                      return (
-                        <div
-                          key={item.id}
-                          className="bg-white dark:bg-slate-900 border-2 border-slate-200/90 dark:border-slate-800 p-4 rounded-3xl flex flex-col justify-between shadow-2xs hover:shadow-md transition-all text-right space-y-3"
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 text-center border border-slate-200 dark:border-slate-800">
+                        <p className="text-sm font-black text-slate-500 dark:text-slate-400">
+                          لا توجد عناصر مسجلة تطابق هذا البحث
+                        </p>
+                        <button
+                          onClick={startAdd}
+                          className="mt-4 px-5 py-2.5 bg-emerald-600 text-white rounded-2xl text-xs font-black inline-flex items-center gap-2 shadow-sm"
                         >
-                          {/* Item Header & Details */}
-                          <div
-                            onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
-                            className="flex items-start gap-3 cursor-pointer"
-                          >
-                            <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0">
-                              {item.image || item.logoImage || (item.images && item.images[0]) ? (
+                          <Plus size={16} />
+                          <span>إضافة أول عنصر</span>
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 gap-3">
+                      {filtered.map((item, idx) => (
+                        <div
+                          key={item.id || idx}
+                          className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:shadow-sm transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-right"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+                              {item.image || (item.images && item.images[0]) || item.logoImage ? (
                                 <img
-                                  src={item.image || item.logoImage || (item.images && item.images[0])}
+                                  src={item.image || (item.images && item.images[0]) || item.logoImage}
                                   className="w-full h-full object-cover"
                                   alt=""
                                 />
-                              ) : adminView === "offer_products" ? (
-                                <ShoppingBag className="text-emerald-500" size={24} />
+                              ) : adminView === "medical_complexes" ? (
+                                <Hospital className="text-emerald-600" size={24} />
+                              ) : adminView === "doctors" ? (
+                                <Stethoscope className="text-indigo-600" size={24} />
+                              ) : adminView === "notifications" ? (
+                                <Bell className="text-rose-600" size={24} />
+                              ) : adminView === "taxis" ? (
+                                <Wrench className="text-amber-600" size={24} />
                               ) : (
-                                <Database className="text-slate-400" size={24} />
+                                <ImageIcon className="text-slate-400" size={24} />
                               )}
                             </div>
 
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="text-sm font-black text-slate-900 dark:text-white truncate">
-                                {item.name || item.title || `عنصر #${item.id.slice(0, 6)}`}
-                              </span>
-                              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                                {adminView === "banners"
-                                  ? item.type === "external"
-                                    ? `رابط خارجي: ${item.url || "غير محدد"}`
-                                    : item.targetType === "doctor"
-                                    ? "مربوط ببطاقة طبيب"
-                                    : item.targetType === "medical_complex"
-                                    ? "مربوط بمجمع طبي"
-                                    : item.targetType === "restaurant"
-                                    ? "مربوط بمطعم أو متجر"
-                                    : item.targetType === "serviceOffers"
-                                    ? "مربوط بعرض خدمة"
-                                    : item.targetType === "govAnnouncement"
-                                    ? "مربوط بتنبيه/إعلان حكومي"
-                                    : "ربط داخلي"
-                                  : adminView === "offer_products"
-                                  ? item.price
-                                    ? `السعر: ${item.price}`
-                                    : "منتج عرض"
-                                  : adminView === "medical_complexes"
-                                  ? (item.location || item.description || "مجمع طبي / مستشفى")
-                                  : adminView === "market_stores"
-                                  ? `${item.category ? item.category + " • " : ""}${item.location || item.description || "متجر / مطعم"}`
-                                  : adminView === "market_products"
-                                  ? isSelectedStoreComplex
-                                    ? `${item.specialty || item.category || "عيادة تخصصية"}`
-                                    : `${item.price ? `السعر: ${item.price}` : ""}${item.menuCategory ? ` • ${item.menuCategory}` : ""}`
-                                  : adminView === "serviceOffers"
-                                  ? `${item.price ? `العرض: ${item.price}` : "عرض ترويجي"}`
-                                  : item.specialty || item.carType || item.craft || item.category || item.type || "التفاصيل"}
-                              </span>
-                              {adminView === "market_products" && (
-                                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-bold mt-1 space-y-0.5">
-                                  {isSelectedStoreComplex ? (
-                                    <>
-                                      {item.reservationPhone && <div className="text-emerald-600 dark:text-emerald-400 font-black">📞 رقم الحجز: {item.reservationPhone}</div>}
-                                      {(item.note || item.description) && <div className="text-slate-400 line-clamp-1 font-medium">📝 {item.note || item.description}</div>}
-                                    </>
-                                  ) : (
-                                    <>
-                                      {(item.description || item.note) && <div className="text-slate-400 line-clamp-1 font-medium">{item.description || item.note}</div>}
-                                    </>
-                                  )}
-                                </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-display font-black text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                                  {item.name || item.title}
+                                </h4>
+                                {item.category && (
+                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                    {item.category}
+                                  </span>
+                                )}
+                              </div>
+
+                              {(item.subtitle || item.specialty || item.carType) && (
+                                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
+                                  {item.subtitle || item.specialty || item.carType}
+                                </p>
                               )}
-                              {(item.phone || item.phone1 || item.whatsappNumber) && (
-                                <span dir="ltr" className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-                                  {item.phone || item.phone1 || item.whatsappNumber}
-                                </span>
-                              )}
+
+                              <div className="flex items-center gap-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1 flex-wrap">
+                                {(item.phone1 || item.phone) && (
+                                  <span className="flex items-center gap-1">
+                                    <Phone size={12} />
+                                    <span>{item.phone1 || item.phone}</span>
+                                  </span>
+                                )}
+                                {item.location && <span>📍 {item.location}</span>}
+                                {item.reservationPhone && <span>📞 حجز: {item.reservationPhone}</span>}
+                              </div>
                             </div>
                           </div>
 
-                          {/* LARGE HIGH-VISIBILITY ITEM MANAGEMENT BUTTONS */}
-                          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 flex-wrap">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {/* Manage Doctors inside Medical Complexes */}
-                              {adminView === "medical_complexes" && (
-                                <button
-                                  onClick={() => {
-                                    if (setAdminSelectedStore) setAdminSelectedStore({ ...item, isMedicalComplex: true, _storeType: "complex" });
-                                    setAdminView("market_products");
-                                  }}
-                                  className="h-10 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                                >
-                                  <Stethoscope size={16} />
-                                  <span>الكوادر الطبية</span>
-                                </button>
-                              )}
-
-                              {/* Manage Menu/Products inside Market Stores & Restaurants */}
-                              {adminView === "market_stores" && (
-                                <button
-                                  onClick={() => {
-                                    if (setAdminSelectedStore) setAdminSelectedStore({ ...item, isMedicalComplex: false, _storeType: "store" });
-                                    setAdminView("market_products");
-                                  }}
-                                  className="h-10 px-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                                >
-                                  <ShoppingBag size={16} />
-                                  <span>قائمة الوجبات والمنتجات</span>
-                                </button>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1.5">
-                              {/* Edit Button */}
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                            {/* Medical Complex: Manage Complex Doctors Button */}
+                            {adminView === "medical_complexes" && (
                               <button
-                                onClick={() => startEdit(item)}
-                                className="h-10 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                                onClick={() => {
+                                  if (setAdminSelectedStore) {
+                                    setAdminSelectedStore(item);
+                                  }
+                                  setAdminView("market_products");
+                                  setIsAdding(false);
+                                }}
+                                className="h-10 px-3.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
                               >
-                                <Edit3 size={16} />
-                                <span>تعديل</span>
+                                <Stethoscope size={15} />
+                                <span>الكوادر الطبية</span>
                               </button>
+                            )}
 
-                              {/* Delete Button */}
-                              <button
-                                onClick={() => deleteItem(item.id, adminView)}
-                                className={`h-10 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
-                                  confirmDelete?.id === item.id
-                                    ? "bg-rose-600 text-white shadow-md animate-pulse px-4"
-                                    : "bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 hover:bg-rose-200"
-                                }`}
-                              >
-                                <Trash2 size={16} />
-                                <span>{confirmDelete?.id === item.id ? "تأكيد؟" : "حذف"}</span>
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => startEdit(item)}
+                              className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                              title="تعديل"
+                            >
+                              <Edit3 size={17} />
+                            </button>
+
+                            <button
+                              onClick={() => deleteItem(item.id, adminView)}
+                              className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-400 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                              title="حذف"
+                            >
+                              <Trash2 size={17} />
+                            </button>
                           </div>
-
-                          {isExpanded && (
-                            <div className="mt-2 text-xs bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl space-y-1.5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
-                              {item.description && <p className="leading-relaxed">{item.description}</p>}
-                              {item.notes && <p className="leading-relaxed">{item.notes}</p>}
-                              {item.workingHours && <p>أوقات العمل: {item.workingHours}</p>}
-                              {item.area && <p>المنطقة: {item.area}</p>}
-                            </div>
-                          )}
                         </div>
-                      );
-                    });
-                  })()}
-                </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -2086,77 +1465,27 @@ export const AdminPanel = (props: AdminPanelProps) => {
   );
 };
 
-export const AdminInput = ({
+const AdminInput = ({
   placeholder,
   value,
   onChange,
+  type = "text",
 }: {
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
+  type?: string;
 }) => (
-  <input
-    type="text"
-    placeholder={placeholder}
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    className="w-full h-12 bg-white dark:bg-slate-950 rounded-2xl border-2 border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-bold text-slate-900 dark:text-white px-4 shadow-2xs focus:border-emerald-500 outline-none transition-all text-right"
-  />
-);
-
-export const AdminTextarea = ({
-  placeholder,
-  value,
-  onChange,
-}: {
-  placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
-}) => (
-  <textarea
-    placeholder={placeholder}
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    className="w-full p-4 bg-white dark:bg-slate-950 rounded-2xl border-2 border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-bold text-slate-900 dark:text-white shadow-2xs h-32 focus:border-emerald-500 outline-none transition-all resize-none text-right"
-  />
-);
-
-export const AdminSelect = ({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: { label: string; value: string }[];
-  onChange: (v: string) => void;
-}) => (
-  <div className="space-y-1.5 w-full text-right">
-    <label className="text-xs font-bold text-slate-500 px-1 uppercase tracking-wider">
-      {label}
+  <div className="space-y-1.5 text-right">
+    <label className="text-xs font-black text-slate-700 dark:text-slate-200">
+      {placeholder}:
     </label>
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-12 bg-white dark:bg-slate-950 rounded-2xl border-2 border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-bold text-slate-900 dark:text-white shadow-2xs outline-none px-4 appearance-none focus:border-emerald-500 transition-all text-right cursor-pointer"
-      >
-        <option value="" disabled>
-          اختر...
-        </option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={18}
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-      />
-    </div>
+    <input
+      type={type}
+      placeholder={placeholder}
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 focus:border-emerald-500 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none transition-all text-right"
+    />
   </div>
 );
-
-export default AdminPanel;
