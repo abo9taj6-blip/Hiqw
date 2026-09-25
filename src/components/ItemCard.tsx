@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft, BadgeCheck } from 'lucide-react';
+import { ChevronLeft, BadgeCheck, MapPin } from 'lucide-react';
 
 const categoryTranslations: Record<string, string> = {};
 
@@ -98,7 +98,7 @@ export const ItemCard = React.memo(({ item, icon, color, onClick, createdAt, isG
     animate={{ opacity: 1, y: 0 }}
     whileTap={{ scale: 0.98 }}
     onClick={handleClick}
-    className="w-full bg-white dark:bg-slate-800 rounded-3xl p-3 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/40 hover:shadow-md transition-all duration-200 cursor-pointer group text-right relative overflow-hidden"
+    className="w-full bg-white dark:bg-slate-800 rounded-3xl p-2.5 sm:p-3 flex gap-3 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/40 hover:shadow-md transition-all duration-200 cursor-pointer group text-right relative overflow-hidden"
     dir="rtl"
   >
     {isNew && (
@@ -120,9 +120,6 @@ export const ItemCard = React.memo(({ item, icon, color, onClick, createdAt, isG
     </div>
     <div className="flex-1 min-w-0 flex flex-col justify-center text-right">
       <div className="flex items-center gap-1.5 mb-1 text-right flex-row-reverse justify-end">
-        {item.isVerified && (
-          <BadgeCheck size={16} className="text-emerald-500 fill-emerald-50" />
-        )}
         <h4 className="font-display font-black text-slate-800 dark:text-white text-sm truncate">{item.name || item.title}</h4>
       </div>
       <div className="flex items-center gap-2 flex-wrap text-right">
@@ -135,6 +132,12 @@ export const ItemCard = React.memo(({ item, icon, color, onClick, createdAt, isG
           <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-lg group-hover:bg-emerald-50 group-hover:text-emerald-600 dark:group-hover:bg-emerald-950/30 dark:group-hover:text-emerald-400 transition-colors">
             {item.subtitle || item.entity}
           </span>
+        )}
+        {item.region && (
+          <p className="w-full text-right text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 flex items-center gap-1">
+            <MapPin size={11} className="text-emerald-500 shrink-0" />
+            <span className="truncate">{item.region}</span>
+          </p>
         )}
         {(item.summary || item.description || item.brief) && (
           <p className="w-full text-right text-[10px] font-bold text-slate-400 truncate opacity-70 mt-0.5 line-clamp-1 break-all">

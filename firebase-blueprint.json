@@ -373,9 +373,22 @@
         "createdAt": { "type": "number" }
       },
       "required": ["id", "name"]
+    },
+    "ServiceCategory": {
+      "title": "Service Category",
+      "description": "Service or craft trade category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "name"]
     }
   },
   "firestore": {
+    "/service_categories/{categoryId}": { "schema": "ServiceCategory", "description": "Service categories and trades" },
     "/users/{uid}": { "schema": "User", "description": "User profiles and roles" },
     "/market_listings/{listingId}": { "schema": "MarketListing", "description": "Classifieds and market listings" },
     "/doctor_specialties/{specialtyId}": { "schema": "DoctorSpecialty", "description": "Managed doctor medical specialties" },

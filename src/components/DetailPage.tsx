@@ -47,7 +47,7 @@ export const DetailPage = ({ title, subtitle, icon, children, onBack, image, isV
 
       <div className="mt-12 flex items-center justify-center gap-2 opacity-30 pb-8 grayscale dark:invert">
          <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
-         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-800">تطبيق دليل الشرقاط الرسمي</span>
+         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-800">دليل الشرقاط</span>
          <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ShieldCheck,
@@ -20,12 +20,14 @@ import {
   RotateCcw,
   Calendar,
   Phone,
+  MapPin,
 } from "lucide-react";
 import {
   Doctor,
   BannerAd,
   Notification,
   DoctorSpecialty,
+  DoctorRegion,
   ServiceCategory,
 } from "../types";
 import { excelService } from "../services/excelService";
@@ -92,6 +94,8 @@ interface AdminPanelProps {
   setDoctors?: React.Dispatch<React.SetStateAction<any[]>>;
   doctorSpecialtiesList?: DoctorSpecialty[];
   setDoctorSpecialtiesList?: React.Dispatch<React.SetStateAction<DoctorSpecialty[]>>;
+  doctorRegionsList?: DoctorRegion[];
+  setDoctorRegionsList?: React.Dispatch<React.SetStateAction<DoctorRegion[]>>;
   serviceCategoriesList?: ServiceCategory[];
   setServiceCategoriesList?: React.Dispatch<React.SetStateAction<ServiceCategory[]>>;
   // Optional compatibility props
@@ -133,16 +137,24 @@ export const AdminPanel = (props: AdminPanelProps) => {
     setMedicalComplexes,
     doctorSpecialtiesList = [],
     setDoctorSpecialtiesList,
+    doctorRegionsList = [],
+    setDoctorRegionsList,
     serviceCategoriesList = [],
     setServiceCategoriesList,
   } = props;
 
   const [expandedItemId, setExpandedItemId] = React.useState<string | null>(null);
-  const [doctorSubTab, setDoctorSubTab] = useState<"doctors" | "specialties">("doctors");
+  const [doctorSubTab, setDoctorSubTab] = useState<"doctors" | "specialties" | "regions">("doctors");
   const [newSpecialtyName, setNewSpecialtyName] = useState("");
   const [specialtySearch, setSpecialtySearch] = useState("");
   const [editingSpecialtyId, setEditingSpecialtyId] = useState<string | null>(null);
   const [editingSpecialtyName, setEditingSpecialtyName] = useState("");
+
+  // Region Management State
+  const [newRegionName, setNewRegionName] = useState("");
+  const [regionSearch, setRegionSearch] = useState("");
+  const [editingRegionId, setEditingRegionId] = useState<string | null>(null);
+  const [editingRegionName, setEditingRegionName] = useState("");
 
   // Service Categories Management State
   const [serviceSubTab, setServiceSubTab] = useState<"services" | "categories">("services");
@@ -152,6 +164,111 @@ export const AdminPanel = (props: AdminPanelProps) => {
   const [editingServiceCategoryName, setEditingServiceCategoryName] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Existing doctor regions extracted strictly from existing doctors added by admin
+  const existingDoctorRegions = useMemo(() => {
+    const set = new Set<string>();
+    (doctorRegionsList || []).forEach((r) => {
+      if (r.name && String(r.name).trim()) set.add(String(r.name).trim());
+    });
+    (doctors || []).forEach((d: any) => {
+      if (d.region && String(d.region).trim()) {
+        set.add(String(d.region).trim());
+      }
+    });
+    return Array.from(set);
+  }, [doctors, doctorRegionsList]);
+
+  // Region Management Actions
+  const defaultDoctorRegions: DoctorRegion[] = [
+    { id: "r-1", name: "الساحل الأيمن", order: 1 },
+    { id: "r-2", name: "الساحل الأيسر", order: 2 },
+    { id: "r-3", name: "المركز / السوق", order: 3 },
+    { id: "r-4", name: "سديرة", order: 4 },
+    { id: "r-5", name: "الزوية", order: 5 },
+    { id: "r-6", name: "القرى المجاورة", order: 6 },
+  ];
+
+  const handleAddRegion = async () => {
+    const trimmed = newRegionName.trim();
+    if (!trimmed) {
+      alert("يرجى كتابة اسم المنطقة");
+      return;
+    }
+    if (doctorRegionsList?.some((r) => r.name.trim().toLowerCase() === trimmed.toLowerCase())) {
+      alert("هذه المنطقة موجودة مسبقاً في القائمة");
+      return;
+    }
+    const newReg: DoctorRegion = {
+      id: `reg-${Date.now()}`,
+      name: trimmed,
+      order: (doctorRegionsList?.length || 0) + 1,
+      createdAt: Date.now(),
+    };
+    try {
+      if (setDoctorRegionsList) {
+        setDoctorRegionsList((prev) => [...prev, newReg]);
+      }
+      await firebaseService.saveDocument("doctor_regions", newReg.id, newReg);
+      setNewRegionName("");
+      alert("✅ تمت إضافة المنطقة بنجاح");
+    } catch (e: any) {
+      console.error(e);
+      alert("فشل حفظ المنطقة: " + (e?.message || String(e)));
+    }
+  };
+
+  const handleUpdateRegion = async (id: string) => {
+    const trimmed = editingRegionName.trim();
+    if (!trimmed) {
+      alert("يرجى كتابة اسم المنطقة الجديد");
+      return;
+    }
+    try {
+      if (setDoctorRegionsList) {
+        setDoctorRegionsList((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, name: trimmed } : r))
+        );
+      }
+      await firebaseService.updateDocument("doctor_regions", id, { name: trimmed });
+      setEditingRegionId(null);
+      setEditingRegionName("");
+      alert("✅ تم تعديل اسم المنطقة بنجاح");
+    } catch (e: any) {
+      console.error(e);
+      alert("فشل تعديل المنطقة: " + (e?.message || String(e)));
+    }
+  };
+
+  const handleDeleteRegion = async (id: string, name: string) => {
+    if (!window.confirm(`هل أنت متأكد من حذف منطقة "${name}"؟`)) return;
+    try {
+      if (setDoctorRegionsList) {
+        setDoctorRegionsList((prev) => prev.filter((r) => r.id !== id));
+      }
+      await firebaseService.deleteDocument("doctor_regions", id);
+      alert("✅ تم حذف المنطقة بنجاح");
+    } catch (e: any) {
+      console.error(e);
+      alert("فشل حذف المنطقة: " + (e?.message || String(e)));
+    }
+  };
+
+  const handleResetDefaultRegions = async () => {
+    if (!window.confirm("هل تريد استعادة قائمة المناطق الافتراضية؟")) return;
+    try {
+      if (setDoctorRegionsList) {
+        setDoctorRegionsList(defaultDoctorRegions);
+      }
+      for (const reg of defaultDoctorRegions) {
+        await firebaseService.saveDocument("doctor_regions", reg.id, reg);
+      }
+      alert("✅ تمت استعادة المناطق الافتراضية بنجاح");
+    } catch (e: any) {
+      console.error(e);
+      alert("فشل استعادة المناطق: " + (e?.message || String(e)));
+    }
+  };
 
   // Specialty Management Actions
   const handleAddSpecialty = async () => {
@@ -405,14 +522,22 @@ export const AdminPanel = (props: AdminPanelProps) => {
         const confirmMsg = `تم استخراج ${importedDoctors.length} طبيب من الملف.\nهل ترغب في حفظهم بقاعدة البيانات؟`;
         if (window.confirm(confirmMsg)) {
           for (const doc of importedDoctors) {
-            const item = { ...doc, id: doc.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}` };
+            const item = {
+              ...doc,
+              id: doc.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+              region: doc.region || doc["المنطقة"] || doc.area || "",
+            };
             await firebaseService.saveDocument("doctors", item.id, item);
           }
           if (setDoctors) {
             setDoctors((prev) => {
               const prevMap = new Map(prev.map((d) => [d.id, d]));
               importedDoctors.forEach((d) => {
-                const item = { ...d, id: d.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}` };
+                const item = {
+                  ...d,
+                  id: d.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                  region: d.region || d["المنطقة"] || d.area || "",
+                };
                 prevMap.set(item.id, item);
               });
               return Array.from(prevMap.values());
@@ -464,67 +589,38 @@ export const AdminPanel = (props: AdminPanelProps) => {
     }
   };
 
-  // Main Admin Grid Sections Configuration (Focused on user's core requests)
+  // Main Admin Grid Sections Configuration
   const navSections = [
     {
-      id: "medical_complexes",
-      label: "المجمعات الطبية",
-      subtitle: "دليل المجمعات والمراكز والمستشفيات والعيادات الاستشارية",
-      icon: <Hospital size={24} />,
-      badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300",
-      accentBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-      count: medicalComplexes?.length || 0,
-    },
-    {
       id: "doctors",
-      label: "الأطباء",
-      subtitle: "الأطباء والعيادات التخصصية وإدارة التخصصات",
-      icon: <Stethoscope size={24} />,
+      label: "إدارة الأطباء والعيادات",
+      subtitle: "إضافة وتعديل الأطباء، التخصصات والمناطق، واستيراد وتصدير Excel",
+      icon: <Stethoscope size={28} />,
       badgeColor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300",
       accentBg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
       count: doctors?.length || 0,
     },
     {
+      id: "banners",
+      label: "إدارة البنرات الإعلانية",
+      subtitle: "إضافة وتعديل البنرات الإعلانية المتحركة والعروض الترويجية",
+      icon: <ImageIcon size={28} />,
+      badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300",
+      accentBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+      count: banners?.length || 0,
+    },
+    {
       id: "notifications",
-      label: "الاشعارات",
-      subtitle: "إرسال التنبيهات الفورية لهواتف المستخدمين",
-      icon: <Bell size={24} />,
+      label: "إدارة الإشعارات والتنبيهات",
+      subtitle: "إرسال التنبيهات الفورية والملاحظات لهواتف المستخدمين",
+      icon: <Bell size={28} />,
       badgeColor: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-300",
       accentBg: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
       count: notifications?.length || 0,
     },
-    {
-      id: "banners",
-      label: "الإعلانات",
-      subtitle: "شريط الإعلانات الترويجية بأعلى الصفحة",
-      icon: <ImageIcon size={24} />,
-      badgeColor: "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300",
-      accentBg: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
-      count: banners?.length || 0,
-    },
-    {
-      id: "taxis",
-      label: "الخدمات والمهن",
-      subtitle: "كباتن النقل، التكسي، والمهن الحرفية المباشرة",
-      icon: <Wrench size={24} />,
-      badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300",
-      accentBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-      count: taxis?.length || 0,
-    },
   ];
 
-  const currentSection =
-    adminView === "market_products"
-      ? {
-          id: "market_products",
-          label: `الكوادر الطبية: ${adminSelectedStore?.name || "المجمع الطبي"}`,
-          subtitle: "إدارة قائمة الكوادر الطبية والأطباء مع التفاصيل وأرقام الحجز الخاصة بهم",
-          icon: <Stethoscope size={24} />,
-          badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-300",
-          accentBg: "bg-emerald-500/10 text-emerald-600",
-          count: adminMarketProducts?.length || 0,
-        }
-      : navSections.find((s) => s.id === adminView);
+  const currentSection = navSections.find((s) => s.id === adminView);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans pb-16 text-right" dir="rtl">
@@ -536,11 +632,7 @@ export const AdminPanel = (props: AdminPanelProps) => {
             {adminView !== "main" ? (
               <button
                 onClick={() => {
-                  if (adminView === "market_products") {
-                    setAdminView("medical_complexes");
-                  } else {
-                    setAdminView("main");
-                  }
+                  setAdminView("main");
                   setIsAdding(false);
                   setEditingItem(null);
                   setFormData({});
@@ -597,7 +689,7 @@ export const AdminPanel = (props: AdminPanelProps) => {
           /* ================= MAIN DASHBOARD SECTIONS GRID ================= */
           <div className="space-y-6 animate-in fade-in duration-300">
             {/* Nav Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {navSections.map((sec) => (
                 <motion.div
                   key={sec.id}
@@ -609,22 +701,22 @@ export const AdminPanel = (props: AdminPanelProps) => {
                     setEditingItem(null);
                     setFormData({});
                   }}
-                  className="bg-white dark:bg-slate-900 border-2 border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs hover:shadow-md hover:border-emerald-500/50 dark:hover:border-emerald-500/40 transition-all cursor-pointer flex flex-col justify-between min-h-[160px] group text-right"
+                  className="bg-white dark:bg-slate-900 border-2 border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-lg hover:border-indigo-500/50 dark:hover:border-indigo-500/40 transition-all cursor-pointer flex flex-col justify-between min-h-[180px] group text-right"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className={`w-14 h-14 rounded-2xl ${sec.accentBg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                    <div className={`w-16 h-16 rounded-2xl ${sec.accentBg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-xs`}>
                       {sec.icon}
                     </div>
-                    <span className={`text-xs font-black px-3 py-1 rounded-xl border ${sec.badgeColor}`}>
-                      {sec.count} عنصر
+                    <span className={`text-xs font-black px-3.5 py-1.5 rounded-xl border ${sec.badgeColor}`}>
+                      {sec.count} عنصر مسجل
                     </span>
                   </div>
 
-                  <div className="mt-4">
-                    <h3 className="font-display font-black text-base sm:text-lg text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  <div className="mt-5">
+                    <h3 className="font-display font-black text-lg sm:text-xl text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                       {sec.label}
                     </h3>
-                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                    <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
                       {sec.subtitle}
                     </p>
                   </div>
@@ -649,8 +741,8 @@ export const AdminPanel = (props: AdminPanelProps) => {
                 <Search size={18} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
 
-              {/* Excel Import / Export Toolbar for Doctors & Complexes */}
-              {(adminView === "doctors" || adminView === "medical_complexes" || adminView === "taxis") && (
+              {/* Excel Import / Export Toolbar for Doctors */}
+              {adminView === "doctors" && (
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
                     onClick={handleExportExcel}
@@ -681,18 +773,18 @@ export const AdminPanel = (props: AdminPanelProps) => {
               <div className="flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/80">
                 <button
                   onClick={() => setDoctorSubTab("doctors")}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     doctorSubTab === "doctors"
                       ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
                       : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                   }`}
                 >
                   <Stethoscope size={18} />
-                  <span>قائمة الأطباء والعيادات ({doctors.length})</span>
+                  <span>قائمة الأطباء ({doctors.length})</span>
                 </button>
                 <button
                   onClick={() => setDoctorSubTab("specialties")}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     doctorSubTab === "specialties"
                       ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
                       : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -783,7 +875,9 @@ export const AdminPanel = (props: AdminPanelProps) => {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-black text-slate-900 dark:text-white">
-                        {adminView === "market_products"
+                        {adminView === "banners"
+                          ? "صورة البنر الإعلاني المتحرك (مستطيل عريض)"
+                          : adminView === "market_products"
                           ? "صورة الطبيب / الكادر الطبي"
                           : adminView === "medical_complexes"
                           ? "شعار المجمع الطبي (لوجو)"
@@ -870,6 +964,8 @@ export const AdminPanel = (props: AdminPanelProps) => {
                         )}
                       </div>
                     )}
+
+
 
                     {/* Complex Doctor Specialty */}
                     {adminView === "market_products" && (
@@ -1011,6 +1107,84 @@ export const AdminPanel = (props: AdminPanelProps) => {
                       />
                     )}
 
+                    {/* Banner-specific Fields */}
+                    {adminView === "banners" && (
+                      <>
+                        <div className="space-y-1.5 text-right">
+                          <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                            <span>نوع الإعلان والوجهة:</span>
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                              حدد وجهة الضغط على البنر
+                            </span>
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={formData.type || "internal"}
+                              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                              className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none cursor-pointer appearance-none text-right"
+                              dir="rtl"
+                            >
+                              <option value="internal">🔗 رابط داخلي (توجيه لطبيب)</option>
+                              <option value="external">🌐 رابط خارجي (موقع / واتساب / رابط)</option>
+                              <option value="text">📝 إعلان نصي وصورة (نافذة تفاصيل)</option>
+                            </select>
+                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                              <ChevronDown size={18} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {(!formData.type || formData.type === "internal") && (
+                          <div className="space-y-1.5 text-right">
+                            <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                              <span>ربط بطبيب محدد:</span>
+                              <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
+                                فتح ملف الطبيب عند الضغط
+                              </span>
+                            </label>
+                            <div className="relative">
+                              <select
+                                value={formData.targetId || ""}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    targetId: e.target.value,
+                                    targetType: "doctor",
+                                  })
+                                }
+                                className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none cursor-pointer appearance-none text-right"
+                                dir="rtl"
+                              >
+                                <option value="">-- بدون ربط مباشر بطبيب --</option>
+                                {doctors?.map((d) => (
+                                  <option key={d.id} value={d.id}>
+                                    {d.name} ({d.subtitle || (d as any).specialty || "طبيب"})
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                <ChevronDown size={18} />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {(formData.type === "external" || formData.type === "text") && (
+                          <AdminInput
+                            placeholder="الرابط الخارجي (مثال: https://...)"
+                            value={formData.url || ""}
+                            onChange={(v) => setFormData({ ...formData, url: v })}
+                          />
+                        )}
+
+                        <AdminInput
+                          placeholder="نص زر الإعلان (مثال: عرض التفاصيل / احجز الآن)"
+                          value={formData.buttonText || ""}
+                          onChange={(v) => setFormData({ ...formData, buttonText: v })}
+                        />
+                      </>
+                    )}
+
                     {/* Taxi Car Type */}
                     {adminView === "taxis" && (
                       <AdminInput
@@ -1044,23 +1218,6 @@ export const AdminPanel = (props: AdminPanelProps) => {
                     />
                   </div>
 
-                  {/* Show in Home Checkbox */}
-                  {adminView !== "notifications" && adminView !== "banners" && (
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.showInHome !== false}
-                        onChange={(e) =>
-                          setFormData({ ...formData, showInHome: e.target.checked })
-                        }
-                        className="w-5 h-5 rounded-lg text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                        عرض هذا العنصر في الصفحة الرئيسية للتطبيق
-                      </span>
-                    </label>
-                  )}
-
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3 pt-2">
                     <button
@@ -1084,116 +1241,118 @@ export const AdminPanel = (props: AdminPanelProps) => {
               </div>
             ) : null}
 
-            {/* Specialties Management Panel (When in Specialties Sub-Tab) */}
+            {/* Specialties Management Panel */}
             {adminView === "doctors" && doctorSubTab === "specialties" && (
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <div>
-                    <h3 className="font-display font-black text-slate-900 dark:text-white text-base">
-                      إدارة التخصصات الطبية المعتمدة
-                    </h3>
-                    <p className="text-xs text-slate-400 font-bold">
-                      أضف أو عدّل التخصصات التي تظهر في قوائم تصفية الأطباء
-                    </p>
+                <div className="space-y-5 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div>
+                      <h3 className="font-display font-black text-slate-900 dark:text-white text-base">
+                        إدارة التخصصات الطبية المعتمدة
+                      </h3>
+                      <p className="text-xs text-slate-400 font-bold">
+                        أضف أو عدّل التخصصات التي تظهر في قوائم تصفية الأطباء
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleResetDefaultSpecialties}
+                      className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-black flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                    >
+                      <RotateCcw size={14} />
+                      <span>استعادة التخصصات الافتراضية</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={handleResetDefaultSpecialties}
-                    className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-black flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-                  >
-                    <RotateCcw size={14} />
-                    <span>استعادة التخصصات الافتراضية</span>
-                  </button>
-                </div>
 
-                {/* Add New Specialty Bar */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="اكتب اسم التخصص الطبي الجديد..."
-                    value={newSpecialtyName}
-                    onChange={(e) => setNewSpecialtyName(e.target.value)}
-                    className="flex-1 h-12 px-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-right"
-                  />
-                  <button
-                    onClick={handleAddSpecialty}
-                    className="h-12 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black flex items-center gap-2 active:scale-95 transition-all cursor-pointer shrink-0"
-                  >
-                    <Plus size={18} />
-                    <span>إضافة</span>
-                  </button>
-                </div>
-
-                {/* Search Specialties */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="ابحث في التخصصات..."
-                    value={specialtySearch}
-                    onChange={(e) => setSpecialtySearch(e.target.value)}
-                    className="w-full h-10 pr-9 pl-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 text-right"
-                  />
-                  <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                </div>
-
-                {/* Specialties Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[420px] overflow-y-auto">
-                  {doctorSpecialtiesList
-                    ?.filter((s) => !specialtySearch || s.name.includes(specialtySearch))
-                    .map((spec) => (
-                      <div
-                        key={spec.id}
-                        className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-2"
+                    {/* Add New Specialty Bar */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="اكتب اسم التخصص الطبي الجديد..."
+                        value={newSpecialtyName}
+                        onChange={(e) => setNewSpecialtyName(e.target.value)}
+                        className="flex-1 h-12 px-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-right"
+                      />
+                      <button
+                        onClick={handleAddSpecialty}
+                        className="h-12 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black flex items-center gap-2 active:scale-95 transition-all cursor-pointer shrink-0"
                       >
-                        {editingSpecialtyId === spec.id ? (
-                          <div className="flex items-center gap-2 flex-1">
-                            <input
-                              type="text"
-                              value={editingSpecialtyName}
-                              onChange={(e) => setEditingSpecialtyName(e.target.value)}
-                              className="flex-1 h-8 px-2 bg-white dark:bg-slate-800 border rounded-lg text-xs font-bold text-right"
-                            />
-                            <button
-                              onClick={() => handleUpdateSpecialty(spec.id)}
-                              className="px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-black rounded-lg"
-                            >
-                              حفظ
-                            </button>
-                            <button
-                              onClick={() => setEditingSpecialtyId(null)}
-                              className="px-2 py-1 bg-slate-200 text-slate-700 text-[10px] font-black rounded-lg"
-                            >
-                              إلغاء
-                            </button>
+                        <Plus size={18} />
+                        <span>إضافة تخصص</span>
+                      </button>
+                    </div>
+
+                    {/* Search Specialties */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="ابحث في التخصصات..."
+                        value={specialtySearch}
+                        onChange={(e) => setSpecialtySearch(e.target.value)}
+                        className="w-full h-10 pr-9 pl-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 text-right"
+                      />
+                      <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    </div>
+
+                    {/* Specialties Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[420px] overflow-y-auto">
+                      {doctorSpecialtiesList
+                        ?.filter((s) => !specialtySearch || s.name.includes(specialtySearch))
+                        .map((spec) => (
+                          <div
+                            key={spec.id}
+                            className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-2"
+                          >
+                            {editingSpecialtyId === spec.id ? (
+                              <div className="flex items-center gap-2 flex-1">
+                                <input
+                                  type="text"
+                                  value={editingSpecialtyName}
+                                  onChange={(e) => setEditingSpecialtyName(e.target.value)}
+                                  className="flex-1 h-8 px-2 bg-white dark:bg-slate-800 border rounded-lg text-xs font-bold text-right"
+                                />
+                                <button
+                                  onClick={() => handleUpdateSpecialty(spec.id)}
+                                  className="px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-black rounded-lg"
+                                >
+                                  حفظ
+                                </button>
+                                <button
+                                  onClick={() => setEditingSpecialtyId(null)}
+                                  className="px-2 py-1 bg-slate-200 text-slate-700 text-[10px] font-black rounded-lg"
+                                >
+                                  إلغاء
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                                  {spec.name}
+                                </span>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    onClick={() => {
+                                      setEditingSpecialtyId(spec.id);
+                                      setEditingSpecialtyName(spec.name);
+                                    }}
+                                    className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-all"
+                                    title="تعديل"
+                                  >
+                                    <Edit3 size={13} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteSpecialty(spec.id, spec.name)}
+                                    className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950/60 hover:bg-rose-200 text-rose-600 dark:text-rose-400 flex items-center justify-center transition-all"
+                                    title="حذف"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </div>
-                        ) : (
-                          <>
-                            <span className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
-                              {spec.name}
-                            </span>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                onClick={() => {
-                                  setEditingSpecialtyId(spec.id);
-                                  setEditingSpecialtyName(spec.name);
-                                }}
-                                className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-all"
-                                title="تعديل"
-                              >
-                                <Edit3 size={13} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteSpecialty(spec.id, spec.name)}
-                                className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950/60 hover:bg-rose-200 text-rose-600 dark:text-rose-400 flex items-center justify-center transition-all"
-                                title="حذف"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                  </div>
               </div>
             )}
 
@@ -1335,6 +1494,7 @@ export const AdminPanel = (props: AdminPanelProps) => {
                       (item.phone1 && item.phone1.includes(q)) ||
                       (item.phone && item.phone.includes(q)) ||
                       (item.location && item.location.toLowerCase().includes(q)) ||
+                      (item.region && item.region.toLowerCase().includes(q)) ||
                       (item.description && item.description.toLowerCase().includes(q)) ||
                       (item.message && item.message.toLowerCase().includes(q))
                     );
@@ -1386,13 +1546,22 @@ export const AdminPanel = (props: AdminPanelProps) => {
                             </div>
 
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className="font-display font-black text-sm sm:text-base text-slate-900 dark:text-white truncate">
                                   {item.name || item.title}
                                 </h4>
                                 {item.category && (
                                   <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                                     {item.category}
+                                  </span>
+                                )}
+                                {adminView === "banners" && (
+                                  <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                    {item.type === "external"
+                                      ? "🌐 رابط خارجي"
+                                      : item.type === "text"
+                                      ? "📝 إعلان نصي"
+                                      : "🔗 توجيه لطبيب"}
                                   </span>
                                 )}
                               </div>
@@ -1403,6 +1572,12 @@ export const AdminPanel = (props: AdminPanelProps) => {
                                 </p>
                               )}
 
+                              {adminView === "banners" && (item.content || item.description) && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-1 mt-0.5">
+                                  {item.content || item.description}
+                                </p>
+                              )}
+
                               <div className="flex items-center gap-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1 flex-wrap">
                                 {(item.phone1 || item.phone) && (
                                   <span className="flex items-center gap-1">
@@ -1410,8 +1585,23 @@ export const AdminPanel = (props: AdminPanelProps) => {
                                     <span>{item.phone1 || item.phone}</span>
                                   </span>
                                 )}
+                                {item.region && (
+                                  <span className="text-emerald-600 dark:text-emerald-400">
+                                    🏙️ {item.region}
+                                  </span>
+                                )}
                                 {item.location && <span>📍 {item.location}</span>}
                                 {item.reservationPhone && <span>📞 حجز: {item.reservationPhone}</span>}
+                                {adminView === "banners" && item.buttonText && (
+                                  <span className="text-amber-600 dark:text-amber-400">
+                                    🔘 زر: {item.buttonText}
+                                  </span>
+                                )}
+                                {adminView === "banners" && item.url && (
+                                  <span className="text-sky-600 dark:text-sky-400 truncate max-w-[200px]">
+                                    🔗 {item.url}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1470,11 +1660,13 @@ const AdminInput = ({
   value,
   onChange,
   type = "text",
+  list,
 }: {
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  list?: string;
 }) => (
   <div className="space-y-1.5 text-right">
     <label className="text-xs font-black text-slate-700 dark:text-slate-200">
@@ -1482,6 +1674,7 @@ const AdminInput = ({
     </label>
     <input
       type={type}
+      list={list}
       placeholder={placeholder}
       value={value || ""}
       onChange={(e) => onChange(e.target.value)}

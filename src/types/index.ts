@@ -34,6 +34,13 @@ export interface DoctorSpecialty {
   createdAt?: number;
 }
 
+export interface DoctorRegion {
+  id: string;
+  name: string;
+  order?: number;
+  createdAt?: number;
+}
+
 export interface ServiceCategory {
   id: string;
   name: string;
@@ -57,6 +64,7 @@ export interface Doctor {
   complexId?: string;       // Linked Medical Complex
   workingDays?: string;     // Days of duty / work days
   reservationPhone?: string; // Doctor's reservation phone number
+  region?: string;           // Region / Area (المنطقة)
 }
 
 export interface GovAnnouncement {

@@ -14,9 +14,8 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == '9botaj7@gmail.com' ||
-        request.auth.uid == 'Z1jjLG1lbnevI5VMscX6VVA6E242' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
+        request.auth.uid == 'V12Nl0WBQVfG0znnwetTuJ9LQfn1' ||
+        request.auth.uid == 'Z1jjLG1lbnevI5VMscX6VVA6E242'
       );
     }
 
@@ -31,8 +30,7 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isOwner(userId) && (!request.resource.data.keys().contains('isAdmin') || request.resource.data.isAdmin == false);
-      allow update: if (isOwner(userId) && (!request.resource.data.keys().contains('isAdmin') || request.resource.data.isAdmin == resource.data.isAdmin)) || isAdmin();
+      allow create, update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
@@ -94,6 +92,11 @@ service cloud.firestore {
     }
 
     match /doctor_specialties/{specialtyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /service_categories/{categoryId} {
       allow read: if true;
       allow write: if isAdmin();
     }

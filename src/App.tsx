@@ -60,6 +60,7 @@ import {
   TrendingUp,
   ShieldCheck,
   Filter,
+  SlidersHorizontal,
   Database,
   Settings as SettingsIcon,
   Sparkles,
@@ -93,17 +94,70 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { toPng } from "html-to-image";
 import { playSuccessSound } from "./utils/audio";
-import { AutoHorizontalCarousel } from "./components/AutoHorizontalCarousel";
 
 // Custom Components
-import { NavButton } from "./components/NavButton";
 import { DetailPage, SectionHeader, DetailRow } from "./components/DetailPage";
 import { OverlayPage } from "./components/OverlayPage";
 import { ItemCard } from "./components/ItemCard";
+import { DoctorCard } from "./components/DoctorCard";
 import { SearchBar } from "./components/SearchBar";
-import MedicalComplexDetailPage from "./components/MedicalComplexDetailPage";
-import EventPostCard from "./components/EventPostCard";
 import { AdminPanel } from "./components/AdminPanel";
+
+// Resilient LocalStorage Manager to prevent QuotaExceededError and quota overflows
+export const safeStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e: any) {
+      console.warn(`[safeStorage] Quota exceeded or error setting ${key}:`, e);
+      try {
+        // Free up space by removing non-critical large caches
+        localStorage.removeItem("cached_marketProducts");
+        localStorage.removeItem("cached_marketStores");
+        localStorage.removeItem("cached_hospitalDoctors");
+        localStorage.removeItem("cached_banners");
+        localStorage.removeItem("cached_serviceOffers");
+        localStorage.setItem(key, value);
+      } catch {
+        // If still exceeds quota (e.g., massive base64 payloads), sanitize array payload
+        try {
+          const parsed = JSON.parse(value);
+          if (Array.isArray(parsed)) {
+            const stripped = parsed.slice(0, 40).map((item: any) => {
+              if (item && typeof item === "object") {
+                const copy = { ...item };
+                if (
+                  typeof copy.image === "string" &&
+                  copy.image.startsWith("data:") &&
+                  copy.image.length > 5000
+                ) {
+                  delete copy.image;
+                }
+                return copy;
+              }
+              return item;
+            });
+            localStorage.setItem(key, JSON.stringify(stripped));
+          }
+        } catch {
+          // Gracefully fallback without throwing errors
+        }
+      }
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      localStorage.removeItem(key);
+    } catch {}
+  },
+};
 
 const CountdownTimer = ({
   eventDate,
@@ -183,6 +237,7 @@ const CountdownTimer = ({
 import {
   Doctor,
   DoctorSpecialty,
+  DoctorRegion,
   ServiceCategory,
   GovAnnouncement,
   BannerAd,
@@ -586,6 +641,33 @@ const getStoreClassification = (store: any): "مطاعم" | "متاجر" | "مك
   return "متاجر";
 };
 
+const defaultAppBanners: BannerAd[] = [
+  {
+    id: "banner-1",
+    title: "دليل أطباء قضاء الشرقاط",
+    content: "احجز موعدك وتعرف على أوقات الدوام والعناوين الدقيقة لأبرز الأطباء والعيادات التخصصية والمراكز الطبية.",
+    image: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1200&auto=format&fit=crop&q=80",
+    type: "internal",
+    buttonText: "تصفح الأطباء",
+  },
+  {
+    id: "banner-2",
+    title: "خدمة دليل الأطباء والعيادات التخصصية",
+    content: "تحديثات يومية ومستمرة لأوقات دوام الأطباء والاستشاريين في كافة التخصصات الطبية.",
+    image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&auto=format&fit=crop&q=80",
+    type: "internal",
+    buttonText: "استكشف التخصصات",
+  },
+  {
+    id: "banner-3",
+    title: "إعلانات وخدمات الرعاية الصحية المعتمدة",
+    content: "متابعة مستمرة لجديد الأطباء الزائرين والخدمات الطبية المعتمدة في المنطقة.",
+    image: "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=1200&auto=format&fit=crop&q=80",
+    type: "internal",
+    buttonText: "عرض التفاصيل",
+  },
+];
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -600,22 +682,32 @@ export default function App() {
 
       setCurrentUser(user);
       if (user) {
-        // Fetch user profile for isAdmin flag
-        const profile = await firebaseService.getDocument("users", user.uid);
-        if (profile) {
-          setUserProfile(profile);
-          setIsAdmin(true); // Since we restricted to admin email only
-        } else {
-          // Auto-create profile if missing
-          const newProfile = {
-            uid: user.uid,
-            email: user.email || "",
-            isAdmin: true,
-            displayName: user.displayName || "أدمن",
-          };
-          await firebaseService.saveDocument("users", user.uid, newProfile);
-          setUserProfile(newProfile);
+        if (user.email === "9botaj7@gmail.com") {
           setIsAdmin(true);
+        }
+        try {
+          // Fetch user profile for isAdmin flag
+          const profile = await firebaseService.getDocument("users", user.uid);
+          if (profile) {
+            setUserProfile(profile);
+            setIsAdmin(true);
+          } else {
+            // Auto-create profile if missing
+            const newProfile = {
+              uid: user.uid,
+              email: user.email || "",
+              isAdmin: true,
+              displayName: user.displayName || "أدمن",
+            };
+            await firebaseService.saveDocument("users", user.uid, newProfile);
+            setUserProfile(newProfile);
+            setIsAdmin(true);
+          }
+        } catch (err) {
+          console.warn("User profile sync notice:", err);
+          if (user.email === "9botaj7@gmail.com") {
+            setIsAdmin(true);
+          }
         }
       } else {
         setUserProfile(null);
@@ -645,7 +737,7 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 3000);
+    }, 450);
     return () => clearTimeout(timer);
   }, []);
   const [onboardingStep, setOnboardingStep] = useState(0);
@@ -654,6 +746,8 @@ export default function App() {
   const [homeEventsSubTab, setHomeEventsSubTab] = useState<"all" | "events" | "offers">("all");
   const [directorySubTab, setDirectorySubTab] = useState<"doctors" | "cars">("doctors");
   const [doctorCategoryFilter, setDoctorCategoryFilter] = useState("الكل");
+  const [doctorRegionFilter, setDoctorRegionFilter] = useState("الكل");
+  const [isCustomDoctorSearchOpen, setIsCustomDoctorSearchOpen] = useState(false);
   const [homeSubTab, setHomeSubTab] = useState<"doctors" | "cars" | "restaurants">("doctors");
   const [marketSearch, setMarketSearch] = useState("");
   const [marketCategoryFilter, setMarketCategoryFilter] = useState<string>("all");
@@ -766,6 +860,37 @@ export default function App() {
     }
   });
 
+  const [doctorRegionsList, setDoctorRegionsList] = useState<DoctorRegion[]>(() => {
+    try {
+      const cached = safeStorage.getItem("cached_doctor_regions");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return [
+        { id: "r-1", name: "الساحل الأيمن", order: 1 },
+        { id: "r-2", name: "الساحل الأيسر", order: 2 },
+        { id: "r-3", name: "المركز / السوق", order: 3 },
+        { id: "r-4", name: "سديرة", order: 4 },
+        { id: "r-5", name: "الزوية", order: 5 },
+        { id: "r-6", name: "القرى المجاورة", order: 6 },
+      ];
+    } catch {
+      return [
+        { id: "r-1", name: "الساحل الأيمن", order: 1 },
+        { id: "r-2", name: "الساحل الأيسر", order: 2 },
+        { id: "r-3", name: "المركز / السوق", order: 3 },
+        { id: "r-4", name: "سديرة", order: 4 },
+        { id: "r-5", name: "الزوية", order: 5 },
+        { id: "r-6", name: "القرى المجاورة", order: 6 },
+      ];
+    }
+  });
+
+  useEffect(() => {
+    safeStorage.setItem("cached_doctor_regions", JSON.stringify(doctorRegionsList));
+  }, [doctorRegionsList]);
+
   const [serviceCategoriesList, setServiceCategoriesList] = useState<ServiceCategory[]>(() => {
     try {
       const cached = localStorage.getItem("cached_service_categories");
@@ -795,9 +920,11 @@ export default function App() {
   });
   const [banners, setBanners] = useState<BannerAd[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem("cached_banners") || "[]");
+      const cached = JSON.parse(localStorage.getItem("cached_banners") || "[]");
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return defaultAppBanners;
     } catch {
-      return [];
+      return defaultAppBanners;
     }
   });
   const [notifications, setNotifications] = useState<Notification[]>(() => {
@@ -822,13 +949,11 @@ export default function App() {
   const markAllNotificationsAsRead = () => {
     const allIds = notifications.map((n) => n.id);
     setReadNotificationIds(allIds);
-    try {
-      localStorage.setItem("read_notification_ids", JSON.stringify(allIds));
-    } catch {}
+    safeStorage.setItem("read_notification_ids", JSON.stringify(allIds));
   };
   const [reminders, setReminders] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem("shirqat_reminders") || "[]");
+      return JSON.parse(safeStorage.getItem("shirqat_reminders") || "[]");
     } catch {
       return [];
     }
@@ -836,7 +961,7 @@ export default function App() {
 
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem("shirqat_favorite_ids") || "[]");
+      return JSON.parse(safeStorage.getItem("shirqat_favorite_ids") || "[]");
     } catch {
       return [];
     }
@@ -846,9 +971,7 @@ export default function App() {
     const isFav = favoriteIds.includes(id);
     const nextFavs = isFav ? favoriteIds.filter((f) => f !== id) : [...favoriteIds, id];
     setFavoriteIds(nextFavs);
-    try {
-      localStorage.setItem("shirqat_favorite_ids", JSON.stringify(nextFavs));
-    } catch {}
+    safeStorage.setItem("shirqat_favorite_ids", JSON.stringify(nextFavs));
 
     const newShowInHome = !isFav;
     if (type === 'doctor') {
@@ -990,51 +1113,35 @@ export default function App() {
 
   // Automated Cache Syncing to LocalStorage to prevent stale cache or data loss
   useEffect(() => {
-    try {
-      localStorage.setItem("cached_doctors", JSON.stringify(doctors));
-    } catch (e) {}
+    safeStorage.setItem("cached_doctors", JSON.stringify(doctors));
   }, [doctors]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("cached_taxis", JSON.stringify(taxis));
-    } catch (e) {}
+    safeStorage.setItem("cached_taxis", JSON.stringify(taxis));
   }, [taxis]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("cached_govAnnouncements", JSON.stringify(govAnnouncements));
-    } catch (e) {}
+    safeStorage.setItem("cached_govAnnouncements", JSON.stringify(govAnnouncements));
   }, [govAnnouncements]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("cached_banners", JSON.stringify(banners));
-    } catch (e) {}
+    safeStorage.setItem("cached_banners", JSON.stringify(banners));
   }, [banners]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("cached_medicalComplexes", JSON.stringify(medicalComplexes));
-    } catch (e) {}
+    safeStorage.setItem("cached_medicalComplexes", JSON.stringify(medicalComplexes));
   }, [medicalComplexes]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("cached_marketStores", JSON.stringify(marketStores));
-    } catch (e) {}
+    safeStorage.setItem("cached_marketStores", JSON.stringify(marketStores));
   }, [marketStores]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("cached_serviceOffers", JSON.stringify(serviceOffers));
-    } catch (e) {}
+    safeStorage.setItem("cached_serviceOffers", JSON.stringify(serviceOffers));
   }, [serviceOffers]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("cached_doctor_specialties", JSON.stringify(doctorSpecialtiesList));
-    } catch (e) {}
+    safeStorage.setItem("cached_doctor_specialties", JSON.stringify(doctorSpecialtiesList));
   }, [doctorSpecialtiesList]);
   const [marketProducts, setMarketProducts] = useState<MarketProduct[]>(() => {
     try {
@@ -1355,12 +1462,10 @@ export default function App() {
       } catch (e) { /* ignore */ }
     };
     loadFromCache('cached_doctors', setDoctors);
-    loadFromCache('cached_taxis', setTaxis);
-    loadFromCache('cached_govAnnouncements', setGovAnnouncements);
     loadFromCache('cached_banners', setBanners);
-    loadFromCache('cached_marketStores', setMarketStores);
-    loadFromCache('cached_marketProducts', setMarketProducts);
-    loadFromCache('cached_hospitalDoctors', setHospitalDoctors);
+    loadFromCache('cached_notifications', setNotifications);
+    loadFromCache('cached_doctorSpecialties', setDoctorSpecialtiesList);
+    loadFromCache('cached_doctorRegions', setDoctorRegionsList);
 
     // Load settings from cache if needed
     try {
@@ -1368,43 +1473,50 @@ export default function App() {
       if (cachedSettings) setAppSettings(JSON.parse(cachedSettings));
     } catch(e) {}
 
-    // 2) Don't refetch from server unless it's been 30 minutes (persistent across tabs/sessions)
+    // 2) Cache window: Don't refetch from server unless 24 hours have passed or cache is empty
     const lastFetch = Number(localStorage.getItem('lastFullFetch') || 0);
-    const THIRTY_MIN = 30 * 60 * 1000;
-    if (Date.now() - lastFetch < THIRTY_MIN) {
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    const hasCachedDoctors = Boolean(localStorage.getItem('cached_doctors'));
+
+    if (hasCachedDoctors && (Date.now() - lastFetch < TWENTY_FOUR_HOURS)) {
       setLoadTracker({
         doctors: true, govAnnouncements: true, banners: true,
         marketStores: true, hospitalDoctors: true, settings: true, serviceOffers: true,
       });
-      return; // Data in persistent cache is sufficient
+      return; // Persistent local cache is valid (0 reads consumed)
     }
 
-    // 3) Actual read from server once for active collections (with safety caps)
+    // 3) Optimized fetch from server for Doctors App active collections
     const fetchAll = async () => {
-      const [doctors, taxisDocs, gov, banners, stores, complexes, products, hospDoctors, settingsDocs, notificationsDocs] = await Promise.all([
+      const [doctorsDocs, bannersDocs, settingsDocs, notificationsDocs, specsDocs, regionsDocs] = await Promise.all([
         firebaseService.fetchCollectionOnce<Doctor>('doctors', undefined, 'desc', 150),
-        firebaseService.fetchCollectionOnce<TaxiDriver>('taxis', undefined, 'desc', 100),
-        firebaseService.fetchCollectionOnce<GovAnnouncement>('govAnnouncements', undefined, 'desc', 50),
         firebaseService.fetchCollectionOnce<BannerAd>('banners', undefined, 'desc', 50),
-        firebaseService.fetchCollectionOnce<any>('market_stores', undefined, 'desc', 100),
-        firebaseService.fetchCollectionOnce<any>('medical_complexes', undefined, 'desc', 100),
-        firebaseService.fetchAllProductsOnce(),
-        firebaseService.fetchCollectionOnce<HospitalDoctor>('hospital_doctors', undefined, 'desc', 100),
         firebaseService.fetchCollectionOnce<any>('settings', undefined, 'desc', 10),
         firebaseService.fetchCollectionOnce<Notification>('notifications', undefined, 'desc', 50),
+        firebaseService.fetchCollectionOnce<DoctorSpecialty>('doctor_specialties', 'order', 'asc', 100),
+        firebaseService.fetchCollectionOnce<DoctorRegion>('doctor_regions', 'order', 'asc', 100),
       ]);
 
-      setDoctors(doctors);
-      if (taxisDocs && taxisDocs.length > 0) setTaxis(taxisDocs);
-      setGovAnnouncements(gov);
-      setBanners(banners);
-
-      setMedicalComplexes(complexes || []);
-      setMarketStores(stores || []);
-
-      setMarketProducts(products);
-      setHospitalDoctors(hospDoctors);
-      setNotifications(notificationsDocs || []);
+      if (doctorsDocs && doctorsDocs.length > 0) {
+        setDoctors(doctorsDocs);
+        safeStorage.setItem('cached_doctors', JSON.stringify(doctorsDocs));
+      }
+      if (bannersDocs && bannersDocs.length > 0) {
+        setBanners(bannersDocs);
+        safeStorage.setItem('cached_banners', JSON.stringify(bannersDocs));
+      }
+      if (notificationsDocs) {
+        setNotifications(notificationsDocs);
+        safeStorage.setItem('cached_notifications', JSON.stringify(notificationsDocs));
+      }
+      if (specsDocs && specsDocs.length > 0) {
+        setDoctorSpecialtiesList(specsDocs);
+        safeStorage.setItem('cached_doctorSpecialties', JSON.stringify(specsDocs));
+      }
+      if (regionsDocs && regionsDocs.length > 0) {
+        setDoctorRegionsList(regionsDocs);
+        safeStorage.setItem('cached_doctorRegions', JSON.stringify(regionsDocs));
+      }
 
       const config = settingsDocs.find((d) => d.id === "general");
       if (config) {
@@ -1414,18 +1526,10 @@ export default function App() {
           hospitalImage: config.hospitalImage,
         };
         setAppSettings(newSettings);
-        localStorage.setItem('cached_settings', JSON.stringify(newSettings));
+        safeStorage.setItem('cached_settings', JSON.stringify(newSettings));
       }
 
-      localStorage.setItem('cached_doctors', JSON.stringify(doctors));
-      if (taxisDocs && taxisDocs.length > 0) localStorage.setItem('cached_taxis', JSON.stringify(taxisDocs));
-      localStorage.setItem('cached_govAnnouncements', JSON.stringify(gov));
-      localStorage.setItem('cached_banners', JSON.stringify(banners));
-      localStorage.setItem('cached_marketStores', JSON.stringify(stores));
-      localStorage.setItem('cached_marketProducts', JSON.stringify(products));
-      localStorage.setItem('cached_hospitalDoctors', JSON.stringify(hospDoctors));
-      localStorage.setItem('cached_notifications', JSON.stringify(notificationsDocs || []));
-      localStorage.setItem('lastFullFetch', String(Date.now()));
+      safeStorage.setItem('lastFullFetch', String(Date.now()));
 
       setLoadTracker({
         doctors: true, govAnnouncements: true, banners: true,
@@ -1553,23 +1657,40 @@ export default function App() {
     return () => clearInterval(interval);
   }, [serviceOffers]);
 
-  // Doctor Specialty Extractor
+  // Doctor Specialty Extractor: Show ONLY specialties that actually contain doctors
   const doctorSpecialties = useMemo(() => {
     const set = new Set<string>();
-    // First, add predefined specialties in order
-    doctorSpecialtiesList.forEach((s) => {
-      if (s.name && s.name.trim()) {
-        set.add(s.name.trim());
+    doctors.forEach((d) => {
+      const spec = (d.subtitle || "").trim();
+      if (spec) {
+        set.add(spec);
       }
     });
-    // Second, add any specialties from existing doctors
+    const activeSpecs = Array.from(set);
+    activeSpecs.sort((a, b) => {
+      const idxA = doctorSpecialtiesList.findIndex((s) => s.name?.trim() === a);
+      const idxB = doctorSpecialtiesList.findIndex((s) => s.name?.trim() === b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b, "ar");
+    });
+    return ["الكل", ...activeSpecs];
+  }, [doctors, doctorSpecialtiesList]);
+
+  // Doctor Regions Extractor - combines managed regions and existing doctors
+  const doctorRegions = useMemo(() => {
+    const set = new Set<string>();
+    doctorRegionsList.forEach((r) => {
+      if (r.name && r.name.trim()) set.add(r.name.trim());
+    });
     doctors.forEach((d) => {
-      if (d.subtitle && d.subtitle.trim()) {
-        set.add(d.subtitle.trim());
+      if (d.region && d.region.trim()) {
+        set.add(d.region.trim());
       }
     });
     return ["الكل", ...Array.from(set)];
-  }, [doctors, doctorSpecialtiesList]);
+  }, [doctors, doctorRegionsList]);
 
   // Handlers
   const filteredDoctors = useMemo(() => {
@@ -1581,16 +1702,34 @@ export default function App() {
           if (!matchSpecialty) return false;
         }
 
-        // 2. Search query filter
-        const name = String(doc.name || "").toLowerCase();
-        const subtitle = String(doc.subtitle || "").toLowerCase();
-        const location = String(doc.location || "").toLowerCase();
-        const searchStr = search.toLowerCase();
-        return (
-          name.includes(searchStr) ||
-          subtitle.includes(searchStr) ||
-          location.includes(searchStr)
-        );
+        // 2. Region Filter (Default "الكل" shows all regions - strictly matches doc.region added to doctor cards)
+        if (doctorRegionFilter !== "الكل") {
+          const normDocRegion = normalizeArabic(String(doc.region || ""));
+          const normTargetRegion = normalizeArabic(doctorRegionFilter);
+          const matchRegion =
+            normDocRegion.includes(normTargetRegion) ||
+            normTargetRegion.includes(normDocRegion);
+          if (!matchRegion) return false;
+        }
+
+        // 3. Search query filter
+        if (search.trim()) {
+          const normSearch = normalizeArabic(search);
+          const name = normalizeArabic(String(doc.name || ""));
+          const subtitle = normalizeArabic(String(doc.subtitle || ""));
+          const location = normalizeArabic(String(doc.location || ""));
+          const region = normalizeArabic(String(doc.region || ""));
+          const phone = String(doc.phone1 || "") + " " + String(doc.phone2 || "") + " " + String(doc.reservationPhone || "");
+          return (
+            name.includes(normSearch) ||
+            subtitle.includes(normSearch) ||
+            location.includes(normSearch) ||
+            region.includes(normSearch) ||
+            phone.includes(normSearch)
+          );
+        }
+
+        return true;
       })
       .sort((a, b) => {
         if (a.isVerified && !b.isVerified) return -1;
@@ -1599,7 +1738,7 @@ export default function App() {
         const nameB = String(b.name || "");
         return nameA.localeCompare(nameB, "ar");
       });
-  }, [doctors, search, doctorCategoryFilter]);
+  }, [doctors, search, doctorCategoryFilter, doctorRegionFilter]);
 
 
   const filteredGovAnnouncements = useMemo(() => {
@@ -1689,6 +1828,9 @@ export default function App() {
     setRestaurantSearch("");
     setTaxiSearch("");
     setCategoryFilter("all");
+    setDoctorCategoryFilter("الكل");
+    setDoctorRegionFilter("الكل");
+    setIsCustomDoctorSearchOpen(false);
     setTaxiCategoryFilter("خصوصي");
     setRestaurantCategoryFilter("مطعم");
   };
@@ -1815,50 +1957,50 @@ export default function App() {
     if (type === "taxis") {
       setTaxis((prev) => {
         const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_taxis", JSON.stringify(next)); } catch {}
+        safeStorage.setItem("cached_taxis", JSON.stringify(next));
         return next;
       });
     } else if (type === "doctors") {
       setDoctors((prev) => {
         const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_doctors", JSON.stringify(next)); } catch {}
+        safeStorage.setItem("cached_doctors", JSON.stringify(next));
         return next;
       });
     } else if (type === "banners") {
       setBanners((prev) => {
         const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_banners", JSON.stringify(next)); } catch {}
+        safeStorage.setItem("cached_banners", JSON.stringify(next));
         return next;
       });
     } else if (type === "govAnnouncements") {
       setGovAnnouncements((prev) => {
         const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_govAnnouncements", JSON.stringify(next)); } catch {}
+        safeStorage.setItem("cached_govAnnouncements", JSON.stringify(next));
         return next;
       });
     } else if (type === "medical_complexes") {
       setMedicalComplexes((prev) => {
         const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_medicalComplexes", JSON.stringify(next)); } catch {}
+        safeStorage.setItem("cached_medicalComplexes", JSON.stringify(next));
         return next;
       });
     } else if (type === "market_stores") {
       setMarketStores((prev) => {
         const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_marketStores", JSON.stringify(next)); } catch {}
+        safeStorage.setItem("cached_marketStores", JSON.stringify(next));
         return next;
       });
     } else if (type === "serviceOffers") {
       setServiceOffers((prev) => {
         const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_serviceOffers", JSON.stringify(next)); } catch {}
+        safeStorage.setItem("cached_serviceOffers", JSON.stringify(next));
         return next;
       });
     } else if (type === "market_products") {
       setAdminMarketProducts((prev) => prev.filter((item) => item.id !== id));
       setMarketProducts((prev) => {
         const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_marketProducts", JSON.stringify(next)); } catch {}
+        safeStorage.setItem("cached_marketProducts", JSON.stringify(next));
         return next;
       });
     } else if (type === "offer_products") {
@@ -1866,7 +2008,7 @@ export default function App() {
     } else if (type === "notifications") {
       setNotifications((prev) => {
         const next = prev.filter((item) => item.id !== id);
-        try { localStorage.setItem("cached_notifications", JSON.stringify(next)); } catch {}
+        safeStorage.setItem("cached_notifications", JSON.stringify(next));
         return next;
       });
     }
@@ -2098,7 +2240,7 @@ export default function App() {
             const next = exists
               ? prev.map((i) => (i.id === savedId ? (fullSavedItem as TaxiDriver) : i))
               : [fullSavedItem as TaxiDriver, ...prev];
-            try { localStorage.setItem("cached_taxis", JSON.stringify(next)); } catch {}
+            safeStorage.setItem("cached_taxis", JSON.stringify(next));
             return next;
           });
         } else if (adminView === "doctors") {
@@ -2107,7 +2249,7 @@ export default function App() {
             const next = exists
               ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
               : [fullSavedItem, ...prev];
-            try { localStorage.setItem("cached_doctors", JSON.stringify(next)); } catch {}
+            safeStorage.setItem("cached_doctors", JSON.stringify(next));
             return next;
           });
         } else if (adminView === "banners") {
@@ -2116,7 +2258,7 @@ export default function App() {
             const next = exists
               ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
               : [fullSavedItem, ...prev];
-            try { localStorage.setItem("cached_banners", JSON.stringify(next)); } catch {}
+            safeStorage.setItem("cached_banners", JSON.stringify(next));
             return next;
           });
         } else if (adminView === "medical_complexes") {
@@ -2125,7 +2267,7 @@ export default function App() {
             const next = exists
               ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
               : [fullSavedItem, ...prev];
-            try { localStorage.setItem("cached_medicalComplexes", JSON.stringify(next)); } catch {}
+            safeStorage.setItem("cached_medicalComplexes", JSON.stringify(next));
             return next;
           });
         } else if (adminView === "market_stores") {
@@ -2134,7 +2276,7 @@ export default function App() {
             const next = exists
               ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
               : [fullSavedItem, ...prev];
-            try { localStorage.setItem("cached_marketStores", JSON.stringify(next)); } catch {}
+            safeStorage.setItem("cached_marketStores", JSON.stringify(next));
             return next;
           });
         } else if (adminView === "serviceOffers") {
@@ -2143,7 +2285,7 @@ export default function App() {
             const next = exists
               ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
               : [fullSavedItem, ...prev];
-            try { localStorage.setItem("cached_serviceOffers", JSON.stringify(next)); } catch {}
+            safeStorage.setItem("cached_serviceOffers", JSON.stringify(next));
             return next;
           });
         } else if (adminView === "market_products") {
@@ -2158,7 +2300,7 @@ export default function App() {
             const next = exists
               ? prev.map((i) => (i.id === savedId ? fullSavedItem : i))
               : [fullSavedItem, ...prev];
-            try { localStorage.setItem("cached_marketProducts", JSON.stringify(next)); } catch {}
+            safeStorage.setItem("cached_marketProducts", JSON.stringify(next));
             return next;
           });
         } else if (adminView === "offer_products") {
@@ -2174,7 +2316,7 @@ export default function App() {
             const next = exists
               ? prev.map((i) => (i.id === savedId ? (fullSavedItem as Notification) : i))
               : [fullSavedItem as Notification, ...prev];
-            try { localStorage.setItem("cached_notifications", JSON.stringify(next)); } catch {}
+            safeStorage.setItem("cached_notifications", JSON.stringify(next));
             return next;
           });
         }
@@ -2478,7 +2620,7 @@ export default function App() {
     const currentBanner = allBanners[bannerIdx % (allBanners.length || 1)];
 
     return (
-      <div className="space-y-4 pt-3 pb-20 animate-in fade-in duration-500">
+      <div className="space-y-4 pt-3 pb-6 animate-in fade-in duration-500">
         {/* Sticky Header */}
         <div
           className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-shirqat-primary/10 shadow-xs relative overflow-hidden"
@@ -2489,9 +2631,17 @@ export default function App() {
           {/* Right Side (على اليمين): Sidebar Menu / Settings (Show ONLY on main home) */}
           <div className="flex items-center gap-2 z-10">
             {subTab === null ? (
-              <div className="w-9 h-9" />
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                className="w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 border border-slate-200/60 dark:border-slate-700 shadow-2xs"
+                title="القائمة الجانبية والإعدادات"
+              >
+                <Menu size={20} />
+              </button>
             ) : (
               <button
+                type="button"
                 onClick={() => setSubTab(null)}
                 className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer active:scale-95 shrink-0"
                 title="رجوع"
@@ -2545,167 +2695,107 @@ export default function App() {
 
         {subTab === null ? (
           <>
-            {/* Banner Carousel */}
-            {allBanners.length > 0 && (
-              <div className="px-3">
-                <div className="relative w-full aspect-[16/7] sm:aspect-[21/9] max-h-[300px] overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm group">
-                  <AnimatePresence mode="popLayout">
-                    <motion.div
-                      key={currentBanner?.id}
-                      initial={{ x: "100%", opacity: 1 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: "-100%", opacity: 1 }}
-                      transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
-                      onClick={() => {
-                        if (!currentBanner) return;
-                        if ((currentBanner as any).isDynamic) return;
-                        setBanners((prev) =>
-                          prev.map((b) =>
-                            b.id === currentBanner.id
-                              ? { ...b, clicks: (b.clicks || 0) + 1 }
-                              : b,
-                          ),
-                        );
-                        if (currentBanner.type === "external" && currentBanner.url) {
-                          window.open(currentBanner.url, "_blank");
-                        } else if (currentBanner.type === "text") {
-                          setSelectedBanner(currentBanner);
-                        } else if (currentBanner.type === "internal" && currentBanner.targetId) {
-                          if (currentBanner.targetType === "doctor") {
-                            const doc = doctors.find((d) => d.id === currentBanner.targetId);
-                            if (doc) {
-                              setSubTab("doctors");
-                              setSelectedDoctor(doc);
-                            }
-                          } else if (currentBanner.targetType === "restaurant") {
-                            const store = marketStores.find((s) => s.id === currentBanner.targetId);
-                            if (store) {
-                              setSelectedStoreId(store.id);
-                            }
-                          } else if (currentBanner.targetType === "serviceOffers") {
-                            const offer = (serviceOffers || []).find((o) => o.id === currentBanner.targetId);
-                            if (offer) {
-                              setSelectedServiceOffer(offer);
-                            }
-                          } else if (currentBanner.targetType === "govAnnouncement") {
-                            const gov = govAnnouncements.find((g) => g.id === currentBanner.targetId);
-                            if (gov) {
-                              setSelectedGovAnnouncement(gov);
-                            }
-                          }
+            {/* Animated Moving Ad Banner Carousel */}
+            {allBanners && allBanners.length > 0 && (
+              <div className="px-3" dir="rtl">
+                <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 bg-slate-900 select-none">
+                  {/* Banner Content Container */}
+                  <div
+                    className="relative w-full h-44 sm:h-52 cursor-pointer overflow-hidden group"
+                    onClick={() => {
+                      const b = currentBanner;
+                      if (!b) return;
+                      if (b.type === "external" && b.url) {
+                        window.open(b.url, "_blank");
+                      } else if (b.type === "internal" && b.targetType === "doctor" && b.targetId) {
+                        const foundDoc = doctors.find((d) => d.id === b.targetId);
+                        if (foundDoc) {
+                          setSelectedDoctor(foundDoc);
+                        } else {
+                          setSelectedBanner(b);
                         }
-                      }}
-                      className={`absolute inset-0 w-full h-full ${(currentBanner as any).isDynamic ? "" : "cursor-pointer"}`}
-                    >
-                      <>
+                      } else {
+                        setSelectedBanner(b);
+                      }
+                    }}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentBanner?.id || bannerIdx}
+                        initial={{ opacity: 0, scale: 1.02 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.45, ease: "easeInOut" }}
+                        className="absolute inset-0"
+                      >
                         {currentBanner?.image ? (
                           <img
-                            src={currentBanner?.image}
-                            className="w-full h-full object-cover"
+                            src={currentBanner.image}
                             alt=""
-                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-shirqat-primary to-emerald-700" />
+                          <div className="w-full h-full bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900" />
                         )}
+                      </motion.div>
+                    </AnimatePresence>
 
-                        <div
-                          className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10 flex flex-col justify-between p-3.5 sm:p-4 text-right"
-                          dir="rtl"
+                    {/* Navigation Arrows for Banners */}
+                    {allBanners.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBannerIdx((prev) => (prev - 1 + allBanners.length) % allBanners.length);
+                          }}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/60 backdrop-blur-sm text-white flex items-center justify-center transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 z-20 cursor-pointer shadow-md"
+                          title="السابق"
                         >
-                          <div className="flex items-center justify-start gap-2">
-                            <h3 className="text-xs sm:text-sm font-display font-black text-white line-clamp-1 drop-shadow-xs">
-                              {currentBanner?.title}
-                            </h3>
-                          </div>
-
-                          {!(currentBanner as any).isDynamic && (
-                            <div className="mt-auto">
-                              <p className="text-[10px] sm:text-xs font-bold text-white/90 line-clamp-1 drop-shadow-xs">
-                                {currentBanner?.content}
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                          <ChevronLeft size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBannerIdx((prev) => (prev + 1) % allBanners.length);
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/60 backdrop-blur-sm text-white flex items-center justify-center transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 z-20 cursor-pointer shadow-md"
+                          title="التالي"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
                       </>
-                    </motion.div>
-                  </AnimatePresence>
-
-                  <div className="absolute bottom-2.5 left-3.5 flex gap-1 bg-black/30 backdrop-blur-md px-2 py-1 rounded-full z-10">
-                    {allBanners.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setBannerIdx(i)}
-                        className={`h-1 transition-all duration-300 rounded-full ${i === bannerIdx % allBanners.length ? "w-4 bg-white" : "w-1 bg-white/40"}`}
-                      />
-                    ))}
+                    )}
                   </div>
+
+                  {/* Banner Indicator Dots */}
+                  {allBanners.length > 1 && (
+                    <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                      {allBanners.map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBannerIdx(i);
+                          }}
+                          className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                            i === bannerIdx % allBanners.length
+                              ? "w-6 bg-white shadow-xs"
+                              : "w-1.5 bg-white/40 hover:bg-white/70"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Featured Medical Complexes Semi-Transparent Horizontal Bar */}
-            {(() => {
-              const activeComplexes = medicalComplexes.filter((s) => s.isActive !== false && s.showInHome !== false);
-              if (activeComplexes.length === 0) return null;
-              return (
-                <div className="px-3" dir="rtl">
-                  <div className="bg-slate-100/70 dark:bg-slate-800/60 backdrop-blur-md border border-slate-200/60 dark:border-slate-700/50 rounded-2xl p-2 sm:p-2.5 shadow-xs flex items-center gap-2">
-                    <div className="flex-1 min-w-0">
-                      <AutoHorizontalCarousel
-                        items={activeComplexes}
-                      intervalMs={3200}
-                      className="gap-2.5"
-                      renderItem={(store) => (
-                        <motion.div
-                          onClick={() => setSelectedStoreId(store.id)}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="w-16 sm:w-20 flex flex-col items-center gap-1.5 cursor-pointer group text-center"
-                        >
-                          {/* Compact Square Image */}
-                          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white dark:bg-slate-700 shadow-xs border border-slate-200/80 dark:border-slate-600/80 flex items-center justify-center shrink-0 relative group-hover:border-emerald-500 transition-colors">
-                            {store.logoImage || store.coverImage ? (
-                              <img
-                                src={store.logoImage || store.coverImage}
-                                alt={store.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                referrerPolicy="no-referrer"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white/90">
-                                <Hospital size={22} />
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Store Name Under Image (Supports 2 Lines) */}
-                          <span className="font-display font-bold text-[10px] sm:text-[11px] text-slate-700 dark:text-slate-200 line-clamp-2 leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors w-full px-0.5 text-center">
-                            {store.name}
-                          </span>
-                        </motion.div>
-                      )}
-                    />
-                  </div>
-
-                  {/* View All Button Side-by-Side in the same bar */}
-                  <button
-                    type="button"
-                    onClick={() => setSubTab("complexes")}
-                    className="h-14 sm:h-16 px-2.5 flex flex-col items-center justify-center gap-1 rounded-xl bg-white/80 dark:bg-slate-700/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-slate-200/80 dark:border-slate-600/70 hover:border-emerald-300 dark:hover:border-emerald-700/50 shadow-xs shrink-0 active:scale-95 transition-all cursor-pointer"
-                    title="عرض جميع المجمعات"
-                  >
-                    <ChevronLeft size={16} />
-                    <span className="text-[10px] font-black leading-none whitespace-nowrap">عرض الكل</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
-
             {/* Direct Doctors Section */}
             <div className="px-3 space-y-2.5" dir="rtl">
-              {/* Search Bar with Specialty Selector beside it */}
+              {/* Search Bar with "بحث مخصص" Button */}
               <div className="flex items-center gap-2">
                 <div className="flex-1 min-w-0">
                   <SearchBar
@@ -2717,28 +2807,49 @@ export default function App() {
                   />
                 </div>
 
-                {/* Specialty Dropdown */}
-                <div className="relative shrink-0">
-                  <div className="relative">
-                    <select
-                      value={doctorCategoryFilter}
-                      onChange={(e) => setDoctorCategoryFilter(e.target.value)}
-                      className="h-12 pr-8 pl-3 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-xs cursor-pointer appearance-none text-right max-w-[130px] sm:max-w-[170px] truncate"
-                      title="تصفية حسب التخصص"
-                    >
-                      {doctorSpecialties.map((spec) => (
-                        <option key={spec} value={spec} className="text-slate-800 dark:text-white bg-white dark:bg-slate-800">
-                          {spec === "الكل" ? "كل التخصصات" : spec}
-                        </option>
-                      ))}
-                    </select>
-                    <Filter
-                      size={15}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                    />
-                  </div>
-                </div>
+                {/* Specialty Filter Button (زر التخصص) */}
+                <button
+                  type="button"
+                  onClick={() => setIsCustomDoctorSearchOpen(true)}
+                  className={`h-12 px-3.5 sm:px-4 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border shadow-xs cursor-pointer active:scale-95 shrink-0 ${
+                    doctorCategoryFilter !== "الكل"
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/20 shadow-md"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-700"
+                  }`}
+                  title="عرض واختيار التخصص الطبي"
+                >
+                  <Stethoscope size={15} className={doctorCategoryFilter !== "الكل" ? "text-white" : "text-emerald-600 dark:text-emerald-400"} />
+                  <span className="whitespace-nowrap">التخصص</span>
+                  {doctorCategoryFilter !== "الكل" && (
+                    <span className="w-2 h-2 rounded-full bg-white shadow-xs" />
+                  )}
+                </button>
               </div>
+
+              {/* Active Filter Badges */}
+              {doctorCategoryFilter !== "الكل" && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5 text-xs">
+                  <span className="text-[10px] font-bold text-slate-400">التخصص المحدد:</span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-black">
+                    <span>🩺 {doctorCategoryFilter}</span>
+                    <button
+                      type="button"
+                      onClick={() => setDoctorCategoryFilter("الكل")}
+                      className="hover:text-rose-500 cursor-pointer"
+                      title="إلغاء تصفية التخصص"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setDoctorCategoryFilter("الكل")}
+                    className="text-[10px] font-black text-rose-500 hover:underline mr-auto cursor-pointer"
+                  >
+                    عرض جميع التخصصات
+                  </button>
+                </div>
+              )}
 
               {/* Doctors List */}
               {isLoading ? (
@@ -2752,53 +2863,14 @@ export default function App() {
                   لا يوجد أطباء مطابقين للبحث أو التخصص المحدد
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden">
                   {filteredDoctors.map((d, i) => (
-                    <motion.div
+                    <DoctorCard
                       key={d.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.02 }}
+                      doctor={d}
                       onClick={() => setSelectedDoctor(d)}
-                      whileHover={{ scale: 1.008 }}
-                      whileTap={{ scale: 0.985 }}
-                      className="w-full bg-white dark:bg-slate-800/90 rounded-2xl p-2.5 sm:p-3 flex gap-3 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:shadow-xs transition-all duration-200 cursor-pointer text-right"
-                    >
-                      {/* Image */}
-                      <div className="w-14 h-14 sm:w-15 sm:h-15 rounded-xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden shrink-0 flex items-center justify-center relative border border-slate-100 dark:border-slate-700">
-                        {d.image ? (
-                          <img
-                            src={d.image}
-                            className="w-full h-full object-cover"
-                            alt={d.name}
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <Stethoscope size={24} className="text-emerald-500/80" />
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h3 className="font-display font-black text-xs sm:text-sm text-slate-800 dark:text-white truncate">
-                          {d.name}
-                        </h3>
-                        {d.subtitle && (
-                          <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
-                            {d.subtitle}
-                          </p>
-                        )}
-
-                        {/* Reservation Phone */}
-                        {d.reservationPhone && (
-                          <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
-                            📞 الحجز: {d.reservationPhone}
-                          </p>
-                        )}
-                      </div>
-
-                      <ChevronLeft size={16} className="text-slate-300 dark:text-slate-600 shrink-0" />
-                    </motion.div>
+                      index={i}
+                    />
                   ))}
                 </div>
               )}
@@ -2822,26 +2894,14 @@ export default function App() {
                       لا يوجد أطباء مطابقين للبحث
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden">
                       {filteredDoctors.map((d, i) => (
-                        <motion.div
+                        <DoctorCard
                           key={d.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.03 }}
-                        >
-                          <ItemCard
-                            item={{
-                              id: d.id,
-                              name: d.name,
-                              subtitle: d.subtitle,
-                              image: d.image,
-                            }}
-                            icon={<Stethoscope />}
-                            color="emerald"
-                            onClick={() => setSelectedDoctor(d)}
-                          />
-                        </motion.div>
+                          doctor={d}
+                          onClick={() => setSelectedDoctor(d)}
+                          index={i}
+                        />
                       ))}
                     </div>
                   )}
@@ -3184,17 +3244,84 @@ export default function App() {
           <div className="w-9 h-9" />
         </div>
 
-        {/* Search Bar */}
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="ابحث عن طبيب أو عيادة أو تخصص..."
-          focusRingClass="focus:ring-emerald-500/20"
-        />
+        {/* Search Bar with "بحث مخصص" Button */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="ابحث عن طبيب أو عيادة أو تخصص..."
+              focusRingClass="focus:ring-emerald-500/20"
+              className="mb-0"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsCustomDoctorSearchOpen(true)}
+            className={`h-12 px-3.5 sm:px-4 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border shadow-xs cursor-pointer active:scale-95 shrink-0 ${
+              doctorCategoryFilter !== "الكل" || doctorRegionFilter !== "الكل"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/20 shadow-md"
+                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-700"
+            }`}
+            title="بحث وتصنيف مخصص حسب التخصص والمنطقة"
+          >
+            <SlidersHorizontal size={15} className={doctorCategoryFilter !== "الكل" || doctorRegionFilter !== "الكل" ? "text-white" : "text-emerald-600 dark:text-emerald-400"} />
+            <span className="whitespace-nowrap">بحث مخصص</span>
+            {(doctorCategoryFilter !== "الكل" || doctorRegionFilter !== "الكل") && (
+              <span className="w-5 h-5 rounded-full bg-white text-emerald-700 text-[10px] font-black flex items-center justify-center shadow-xs">
+                {(doctorCategoryFilter !== "الكل" ? 1 : 0) + (doctorRegionFilter !== "الكل" ? 1 : 0)}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Active Filter Badges */}
+        {(doctorCategoryFilter !== "الكل" || doctorRegionFilter !== "الكل") && (
+          <div className="flex items-center gap-1.5 flex-wrap pt-0.5 text-xs">
+            <span className="text-[10px] font-bold text-slate-400">التصنيف النشط:</span>
+            {doctorCategoryFilter !== "الكل" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[11px] font-black">
+                <span>🩺 {doctorCategoryFilter}</span>
+                <button
+                  type="button"
+                  onClick={() => setDoctorCategoryFilter("الكل")}
+                  className="hover:text-rose-500 cursor-pointer"
+                  title="إلغاء تصفية التخصص"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {doctorRegionFilter !== "الكل" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-black">
+                <span>📍 {doctorRegionFilter}</span>
+                <button
+                  type="button"
+                  onClick={() => setDoctorRegionFilter("الكل")}
+                  className="hover:text-rose-500 cursor-pointer"
+                  title="إلغاء تصفية المنطقة"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setDoctorCategoryFilter("الكل");
+                setDoctorRegionFilter("الكل");
+              }}
+              className="text-[10px] font-black text-rose-500 hover:underline mr-auto cursor-pointer"
+            >
+              عرض عام لكافة الأطباء
+            </button>
+          </div>
+        )}
 
         {/* Doctor List */}
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             {[1, 2, 3, 4].map((i) => (
               <SkeletonCard key={i} />
             ))}
@@ -3204,46 +3331,14 @@ export default function App() {
             لا يوجد أطباء مطابقين للبحث
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden">
             {filteredDoctors.map((d, i) => (
-              <motion.div
+              <DoctorCard
                 key={d.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
+                doctor={d}
                 onClick={() => setSelectedDoctor(d)}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-white dark:bg-slate-800 rounded-3xl p-3 flex gap-3.5 items-center border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-900/40 hover:shadow-md transition-all duration-200 cursor-pointer"
-                dir="rtl"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-700/50 overflow-hidden shrink-0 flex items-center justify-center relative border border-slate-100 dark:border-slate-700">
-                  {d.image ? (
-                    <img
-                      src={d.image}
-                      className="w-full h-full object-cover"
-                      alt={d.name}
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <Stethoscope size={26} className="text-emerald-500/80" />
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0 flex flex-col justify-center text-right">
-                  <h3 className="font-display font-black text-sm text-slate-800 dark:text-white truncate">
-                    {d.name}
-                  </h3>
-                  {d.subtitle && (
-                    <div className="flex items-center gap-1 mt-1 text-[11px] font-bold text-slate-400 dark:text-slate-500">
-                      <span>👨‍⚕️</span>
-                      <span className="truncate">{d.subtitle}</span>
-                    </div>
-                  )}
-                </div>
-
-                <ChevronLeft size={18} className="text-slate-300 dark:text-slate-600 shrink-0" />
-              </motion.div>
+                index={i}
+              />
             ))}
           </div>
         )}
@@ -3736,12 +3831,23 @@ export default function App() {
             ) : (
               <div className="flex flex-col gap-3 pb-8">
                 {filteredGovAnnouncements.map((item) => (
-                  <EventPostCard
+                  <div
                     key={item.id}
-                    item={item}
-                    layout="list"
                     onClick={() => setSelectedGovAnnouncement(item)}
-                  />
+                    className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-sm transition-all cursor-pointer flex items-center gap-3 text-right"
+                  >
+                    {item.image && (
+                      <img src={item.image} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-display font-black text-sm text-slate-900 dark:text-white truncate">
+                        {item.title}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2 mt-1">
+                        {(item as any).content || item.description}
+                      </p>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -3806,11 +3912,21 @@ export default function App() {
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {filteredAnnouncements.map((c) => (
-              <EventPostCard
+              <div
                 key={c.id}
-                item={c}
                 onClick={() => setSelectedGovAnnouncement(c)}
-              />
+                className="bg-white dark:bg-slate-900 rounded-2xl p-3 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-sm transition-all cursor-pointer flex flex-col gap-2 text-right overflow-hidden"
+              >
+                {c.image && (
+                  <img src={c.image} alt="" className="w-full h-28 rounded-xl object-cover" />
+                )}
+                <h4 className="font-display font-black text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                  {c.title}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium line-clamp-2">
+                  {(c as any).content || c.description}
+                </p>
+              </div>
             ))}
           </div>
         )}
@@ -4075,7 +4191,7 @@ export default function App() {
                           onClick={() => {
                             const newRead = [...readNotificationIds, notif.id];
                             setReadNotificationIds(newRead);
-                            localStorage.setItem("read_notification_ids", JSON.stringify(newRead));
+                            safeStorage.setItem("read_notification_ids", JSON.stringify(newRead));
                           }}
                           className="text-[10px] font-black text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 rounded-lg cursor-pointer"
                         >
@@ -4136,100 +4252,29 @@ export default function App() {
       className="min-h-screen font-sans bg-slate-50 text-slate-800"
       dir="rtl"
     >
-      {/* 3-second Splash Screen with App Logo, Title, Phrase and Loading Animation in Brand Colors */}
+      {/* Ultra Lightweight & Fast Splash Screen */}
       <AnimatePresence>
         {showSplash && (
           <motion.div
             key="splash-screen"
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-            className="fixed inset-0 z-[9999] flex flex-col items-center justify-between py-12 px-6 bg-gradient-to-b from-[#022c22] via-[#064e3b] to-[#0d9488] text-white font-sans overflow-hidden select-none"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900 text-white font-sans overflow-hidden select-none p-4"
             dir="rtl"
           >
-            {/* Background ambient particles */}
-            <div className="absolute inset-0 pointer-events-none opacity-30">
-              <div className="absolute top-1/4 left-1/5 w-1.5 h-1.5 bg-white rounded-full animate-ping" />
-              <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-white rounded-full opacity-60" />
-              <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-emerald-200 rounded-full blur-xs opacity-40" />
-              <div className="absolute top-2/3 right-1/5 w-1.5 h-1.5 bg-white rounded-full opacity-80" />
-            </div>
-
-            {/* Top Spacer */}
-            <div className="w-full h-8" />
-
-            {/* Center Content Area */}
-            <div className="flex flex-col items-center justify-center text-center space-y-8 my-auto">
-              {/* Outer Glowing Rings */}
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="relative flex items-center justify-center"
-              >
-                {/* Aura Glow */}
-                <div className="absolute w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-emerald-400/20 animate-pulse blur-xl" />
-                <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center p-3 shadow-2xl relative">
-                  <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-white/15 border border-white/20 flex items-center justify-center p-3">
-                    
-                    {/* App Icon Rounded Card */}
-                    <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-3xl bg-gradient-to-b from-emerald-600 to-teal-800 p-3 shadow-2xl flex flex-col items-center justify-center border border-white/30 relative overflow-hidden group">
-                      <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/15 to-white/0" />
-                      <img
-                        src="/logo_shirqat.svg"
-                        alt="دليل الشرقاط"
-                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md mb-1"
-                        referrerPolicy="no-referrer"
-                      />
-                      <span className="text-[11px] font-black text-white tracking-tight drop-shadow-xs">
-                        دليل الشرقاط
-                      </span>
-                      <span className="text-[8px] font-bold text-emerald-200/90 tracking-tighter">
-                        كل ما تحتاجه في الشرقاط
-                      </span>
-                    </div>
-
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Text Section */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.6 }}
-                className="space-y-2"
-              >
-                <h1 className="text-3xl sm:text-4xl font-display font-black text-white tracking-wide drop-shadow-lg">
-                  دليل الشرقاط
-                </h1>
-                <p className="text-base sm:text-lg font-bold text-emerald-100/90 drop-shadow-sm">
-                  كل ما تحتاجه في مكان واحد.
-                </p>
-              </motion.div>
-
-              {/* Animated Loading Dots & Spinner */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-                className="flex flex-col items-center space-y-4 pt-2"
-              >
-                {/* 3 Pulsing Dots */}
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-white/90 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <span className="w-2.5 h-2.5 bg-white/90 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <span className="w-2.5 h-2.5 bg-white/90 rounded-full animate-bounce" />
-                </div>
-
-                {/* Curved Spinner */}
-                <div className="w-7 h-7 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              </motion.div>
-            </div>
-
-            {/* Bottom Branding / Version */}
-            <div className="text-[11px] font-bold text-emerald-200/60 tracking-wider">
-              تطبيق دليل الشرقاط • الخدمة الشاملة
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-16 h-16 rounded-2xl bg-white/10 p-2 flex items-center justify-center">
+                <img
+                  src="/logo_shirqat.svg"
+                  alt="دليل الشرقاط"
+                  className="w-full h-full object-contain"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <h1 className="text-lg font-display font-black text-white">
+                دليل <span className="text-emerald-400">الشرقاط</span>
+              </h1>
             </div>
           </motion.div>
         )}
@@ -4237,20 +4282,11 @@ export default function App() {
 
 
       <div className="max-w-lg mx-auto pb-6">
-        {selectedStoreId && (medicalComplexes.find((s) => s.id === selectedStoreId) || marketStores.find((s) => s.id === selectedStoreId)) ? (
-          <MedicalComplexDetailPage
-            complex={(medicalComplexes.find((s) => s.id === selectedStoreId) || marketStores.find((s) => s.id === selectedStoreId))!}
-            onBack={() => setSelectedStoreId(null)}
-          />
-        ) : (
-          <>
-            {tab === "home" && renderHome()}
-            {tab === "doctors" && renderDoctorsTab()}
-            {(tab === "services" || tab === "directory") && renderServicesTab()}
-            {tab === "notifications" && renderNotificationsTab()}
-            {tab === "settings" && renderSettingsTab()}
-          </>
-        )}
+        {tab === "home" && renderHome()}
+        {tab === "doctors" && renderDoctorsTab()}
+        {(tab === "services" || tab === "directory") && renderServicesTab()}
+        {tab === "notifications" && renderNotificationsTab()}
+        {tab === "settings" && renderSettingsTab()}
       </div>
 
 
@@ -4258,14 +4294,14 @@ export default function App() {
         {selectedDoctor && activeDoctor && (
           <DetailPage
             title={activeDoctor.name}
-            subtitle={undefined}
+            subtitle={activeDoctor.subtitle}
             icon={<Stethoscope className="text-emerald-500" size={56} />}
             onBack={() => setSelectedDoctor(null)}
             image={activeDoctor.image}
-            isVerified={false}
+            isVerified={activeDoctor.isVerified}
           >
             <div className="space-y-3.5 font-sans" dir="rtl">
-              {/* 1. التخصص */}
+              {/* 1. التخصص الطبي */}
               {activeDoctor.subtitle && (
                 <DetailRow
                   icon={<Stethoscope className="text-emerald-500" />}
@@ -4274,14 +4310,27 @@ export default function App() {
                 />
               )}
 
-              {/* 2. رقم الهاتف */}
-              <DetailRow
-                icon={<Phone className="text-emerald-500" />}
-                label="رقم الهاتف"
-                value={activeDoctor.phone1}
-                actionIcon={<Phone size={14} />}
-                onAction={() => window.open(`tel:${activeDoctor.phone1}`)}
-              />
+              {/* 2. هاتف الحجز المباشر */}
+              {activeDoctor.reservationPhone && (
+                <DetailRow
+                  icon={<Phone className="text-emerald-600" />}
+                  label="رقم هاتف الحجز المباشر"
+                  value={activeDoctor.reservationPhone}
+                  actionIcon={<Phone size={14} />}
+                  onAction={() => window.open(`tel:${activeDoctor.reservationPhone}`)}
+                />
+              )}
+
+              {/* 3. رقم الهاتف الرئيسي والثانوي */}
+              {activeDoctor.phone1 && (
+                <DetailRow
+                  icon={<Phone className="text-emerald-500" />}
+                  label="رقم العيادة"
+                  value={activeDoctor.phone1}
+                  actionIcon={<Phone size={14} />}
+                  onAction={() => window.open(`tel:${activeDoctor.phone1}`)}
+                />
+              )}
               {activeDoctor.phone2 && (
                 <DetailRow
                   icon={<Phone className="text-emerald-500" />}
@@ -4292,22 +4341,33 @@ export default function App() {
                 />
               )}
 
-              {/* 3. الموقع */}
-              <DetailRow
-                icon={<MapPin className="text-emerald-500" />}
-                label="الموقع"
-                value={activeDoctor.location}
-              />
+              {/* 4. العنوان */}
+              {activeDoctor.location && (
+                <DetailRow
+                  icon={<MapPin className="text-emerald-500" />}
+                  label="العنوان"
+                  value={activeDoctor.location}
+                />
+              )}
 
-              {/* 4. التفاصيل */}
+              {/* 5. أوقات الدوام وأيام العيادة */}
+              {activeDoctor.workingDays && (
+                <DetailRow
+                  icon={<Calendar className="text-teal-500" />}
+                  label="أيام وأوقات الدوام"
+                  value={activeDoctor.workingDays}
+                />
+              )}
+
+              {/* 6. التفاصيل والملاحظات */}
               {activeDoctor.description && (
                 <div className="flex items-start gap-3.5 p-4 bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 rounded-2xl text-right">
                   <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
-                     <FileText size={18} />
+                    <FileText size={18} />
                   </div>
                   <div className="flex-1 min-w-0 text-right">
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block mb-1 uppercase tracking-wider">
-                      التفاصيل
+                      التفاصيل والوصف
                     </span>
                     <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
                       {activeDoctor.description}
@@ -4315,9 +4375,6 @@ export default function App() {
                   </div>
                 </div>
               )}
-
-
-
             </div>
           </DetailPage>
         )}
@@ -4714,6 +4771,8 @@ export default function App() {
                 setServiceOffers={setServiceOffers}
                 doctorSpecialtiesList={doctorSpecialtiesList}
                 setDoctorSpecialtiesList={setDoctorSpecialtiesList}
+                doctorRegionsList={doctorRegionsList}
+                setDoctorRegionsList={setDoctorRegionsList}
                 serviceCategoriesList={serviceCategoriesList}
                 setServiceCategoriesList={setServiceCategoriesList}
               />
@@ -4805,7 +4864,7 @@ export default function App() {
                   تطبيق دليل الشرقاط
                 </h3>
                 <p className="text-base font-medium leading-relaxed opacity-95 max-w-md">
-                  تطبيق <span className="font-black text-amber-300">دليل الشرقاط</span> هو أول تطبيق خدمي في قضاء الشرقاط، تم إنشاؤه لتوفير خدمة مجانية متكاملة تسهّل على المواطنين البحث عن أرقام هواتف الأطباء، العيادات التخصصية، المجمعات والمراكز الطبية.
+                  تطبيق <span className="font-black text-amber-300">دليل الشرقاط</span> هو التطبيق الخدمي المباشر لقضاء الشرقاط، تم إنشاؤه لتوفير خدمة مجانية تسهّل على المواطنين البحث عن أرقام هواتف الأطباء، العيادات التخصصية، والإشعارات العاجلة.
                 </p>
               </div>
             </div>
@@ -4971,6 +5030,96 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Custom Doctor Search & Filter Modal (بحث مخصص للأطباء) */}
+      <AnimatePresence>
+        {isCustomDoctorSearchOpen && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.6 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCustomDoctorSearchOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] p-5 shadow-2xl border border-slate-200 dark:border-slate-800 text-right space-y-4 z-10 font-sans"
+              dir="rtl"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <Stethoscope size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-black text-slate-900 dark:text-white text-base">
+                      التخصص
+                    </h3>
+                    <p className="text-[11px] font-bold text-slate-400">
+                      حدد التخصص الطبي لعرض الأطباء
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomDoctorSearchOpen(false)}
+                  className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-center cursor-pointer transition-all active:scale-95"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Specialty Selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Stethoscope size={14} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>التخصص الطبي المطلوب:</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={doctorCategoryFilter}
+                    onChange={(e) => setDoctorCategoryFilter(e.target.value)}
+                    className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 cursor-pointer appearance-none text-right"
+                  >
+                    {doctorSpecialties.map((spec) => (
+                      <option key={spec} value={spec}>
+                        {spec === "الكل" ? "جميع التخصصات الطبية" : spec}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsCustomDoctorSearchOpen(false)}
+                  className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Check size={16} />
+                  <span>عرض الأطباء ({filteredDoctors.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDoctorCategoryFilter("الكل");
+                    setIsCustomDoctorSearchOpen(false);
+                  }}
+                  className="px-3 h-11 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                >
+                  إعادة ضبط
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Settings Sidebar Drawer (قائمة الضبط الجانبية) */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -5015,66 +5164,6 @@ export default function App() {
           </>
         )}
       </AnimatePresence>
-
-
-      {/* Fixed Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-[200] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800/80 px-4 py-2 flex items-center justify-around shadow-lg font-sans max-w-lg mx-auto" dir="rtl">
-        <button
-          type="button"
-          onClick={() => {
-            setTab("home");
-            setSubTab(null);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className={`flex flex-col items-center gap-1 transition-all cursor-pointer active:scale-95 py-1 px-3 rounded-2xl ${
-            tab === "home"
-              ? "text-shirqat-primary dark:text-emerald-400 font-black bg-shirqat-primary/10 dark:bg-emerald-950/40"
-              : "text-slate-400 dark:text-slate-500 hover:text-slate-600 font-bold"
-          }`}
-        >
-          <Home size={20} className={tab === "home" ? "stroke-[2.5]" : "stroke-[1.75]"} />
-          <span className="text-[10px]">الرئيسية</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setTab("notifications");
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className={`relative flex flex-col items-center gap-1 transition-all cursor-pointer active:scale-95 py-1 px-3 rounded-2xl ${
-            tab === "notifications"
-              ? "text-shirqat-primary dark:text-emerald-400 font-black bg-shirqat-primary/10 dark:bg-emerald-950/40"
-              : "text-slate-400 dark:text-slate-500 hover:text-slate-600 font-bold"
-          }`}
-        >
-          <div className="relative">
-            <Bell size={20} className={tab === "notifications" ? "stroke-[2.5]" : "stroke-[1.75]"} />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] bg-rose-500 text-white rounded-full text-[9px] font-black flex items-center justify-center px-1">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </div>
-          <span className="text-[10px]">الإشعارات</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setTab("settings");
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className={`flex flex-col items-center gap-1 transition-all cursor-pointer active:scale-95 py-1 px-3 rounded-2xl ${
-            tab === "settings"
-              ? "text-shirqat-primary dark:text-emerald-400 font-black bg-shirqat-primary/10 dark:bg-emerald-950/40"
-              : "text-slate-400 dark:text-slate-500 hover:text-slate-600 font-bold"
-          }`}
-        >
-          <SettingsIcon size={20} className={tab === "settings" ? "stroke-[2.5]" : "stroke-[1.75]"} />
-          <span className="text-[10px]">الضبط</span>
-        </button>
-      </div>
     </div>
   );
 }
