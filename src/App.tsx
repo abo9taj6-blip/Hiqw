@@ -100,6 +100,7 @@ import { DetailPage, SectionHeader, DetailRow } from "./components/DetailPage";
 import { OverlayPage } from "./components/OverlayPage";
 import { ItemCard } from "./components/ItemCard";
 import { DoctorCard } from "./components/DoctorCard";
+import { DoctorLocationMap } from "./components/DoctorLocationMap";
 import { SearchBar } from "./components/SearchBar";
 import { AdminPanel } from "./components/AdminPanel";
 
@@ -248,7 +249,7 @@ import {
   TaxiDriver,
   Notification,
 } from "./types";
-import { firebaseService } from "./services/firebaseService";
+import { firebaseService, deleteField } from "./services/firebaseService";
 import { auth } from "./lib/firebase";
 import {
   onAuthStateChanged,
@@ -2189,6 +2190,46 @@ export default function App() {
         dataToSave.title = dataToSave.title || "تنبيه من تطبيق الشرقاط 🔔";
         dataToSave.name = dataToSave.name || dataToSave.title;
         dataToSave.message = dataToSave.message || "";
+      } else if (adminView === "doctors") {
+        const latRaw =
+          formData.latitude !== undefined && formData.latitude !== null
+            ? String(formData.latitude).trim()
+            : "";
+        const lngRaw =
+          formData.longitude !== undefined && formData.longitude !== null
+            ? String(formData.longitude).trim()
+            : "";
+
+        if ((latRaw && !lngRaw) || (!latRaw && lngRaw)) {
+          alert("⚠️ يجب إدخال خط العرض (Latitude) وخط الطول (Longitude) معاً، أو تركهما معاً فارغين.");
+          return;
+        }
+
+        if (latRaw && lngRaw) {
+          const latNum = Number(latRaw);
+          const lngNum = Number(lngRaw);
+
+          if (!Number.isFinite(latNum) || isNaN(latNum) || latNum < -90 || latNum > 90) {
+            alert("⚠️ خط العرض (Latitude) يجب أن يكون رقماً صحيحاً بين -90 و 90.");
+            return;
+          }
+
+          if (!Number.isFinite(lngNum) || isNaN(lngNum) || lngNum < -180 || lngNum > 180) {
+            alert("⚠️ خط الطول (Longitude) يجب أن يكون رقماً صحيحاً بين -180 و 180.");
+            return;
+          }
+
+          dataToSave.latitude = Number(latNum.toFixed(6));
+          dataToSave.longitude = Number(lngNum.toFixed(6));
+        } else {
+          if (isEdit) {
+            dataToSave.latitude = deleteField();
+            dataToSave.longitude = deleteField();
+          } else {
+            delete dataToSave.latitude;
+            delete dataToSave.longitude;
+          }
+        }
       }
 
       // Remove undefined values to prevent Firestore errors
@@ -2232,7 +2273,13 @@ export default function App() {
           }
         }
 
-        const fullSavedItem = { ...dataToSave, id: savedId };
+        const fullSavedItem: any = { ...dataToSave, id: savedId };
+        if (typeof fullSavedItem.latitude !== "number" || isNaN(fullSavedItem.latitude)) {
+          delete fullSavedItem.latitude;
+        }
+        if (typeof fullSavedItem.longitude !== "number" || isNaN(fullSavedItem.longitude)) {
+          delete fullSavedItem.longitude;
+        }
 
         if (adminView === "taxis") {
           setTaxis((prev) => {
@@ -4375,6 +4422,9 @@ export default function App() {
                   </div>
                 </div>
               )}
+
+              {/* 7. الخريطة المحلية وتحديد موقع العيادة والمسار */}
+              <DoctorLocationMap doctor={activeDoctor} />
             </div>
           </DetailPage>
         )}

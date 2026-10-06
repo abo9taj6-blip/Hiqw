@@ -32,6 +32,7 @@ import {
 } from "../types";
 import { excelService } from "../services/excelService";
 import { firebaseService } from "../services/firebaseService";
+import { InteractiveMapPicker } from "./InteractiveMapPicker";
 
 interface AdminPanelProps {
   adminView:
@@ -1092,6 +1093,21 @@ export const AdminPanel = (props: AdminPanelProps) => {
                         value={formData.location || ""}
                         onChange={(v) =>
                           setFormData({ ...formData, location: v })
+                        }
+                      />
+                    )}
+
+                    {/* Interactive Geolocation Map Picker for Doctors */}
+                    {adminView === "doctors" && (
+                      <InteractiveMapPicker
+                        latitude={formData.latitude}
+                        longitude={formData.longitude}
+                        onChange={(lat, lng) =>
+                          setFormData({
+                            ...formData,
+                            latitude: lat,
+                            longitude: lng,
+                          })
                         }
                       />
                     )}

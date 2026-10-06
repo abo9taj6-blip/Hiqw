@@ -15,10 +15,13 @@ import {
   increment,
   collectionGroup,
   writeBatch,
-  limit
+  limit,
+  deleteField,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from '../lib/firebase';
+
+export { deleteField };
 
 export enum OperationType {
   CREATE = 'create',

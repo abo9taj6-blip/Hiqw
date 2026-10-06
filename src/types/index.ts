@@ -65,6 +65,8 @@ export interface Doctor {
   workingDays?: string;     // Days of duty / work days
   reservationPhone?: string; // Doctor's reservation phone number
   region?: string;           // Region / Area (المنطقة)
+  latitude?: number;         // Geolocation Latitude (-90 to 90)
+  longitude?: number;        // Geolocation Longitude (-180 to 180)
 }
 
 export interface GovAnnouncement {
