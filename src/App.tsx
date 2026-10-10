@@ -24,6 +24,8 @@ import {
   Shield,
   Mail,
   MapPin,
+  Compass,
+  Landmark,
   Facebook,
   Instagram,
   ChevronRight,
@@ -101,8 +103,10 @@ import { OverlayPage } from "./components/OverlayPage";
 import { ItemCard } from "./components/ItemCard";
 import { DoctorCard } from "./components/DoctorCard";
 import { DoctorLocationMap } from "./components/DoctorLocationMap";
+import { DistrictDetailPage } from "./components/DistrictDetailPage";
 import { SearchBar } from "./components/SearchBar";
 import { AdminPanel } from "./components/AdminPanel";
+import { DEFAULT_DISTRICTS } from "./data/salahaddin";
 
 // Resilient LocalStorage Manager to prevent QuotaExceededError and quota overflows
 export const safeStorage = {
@@ -248,6 +252,7 @@ import {
   ServiceOffer,
   TaxiDriver,
   Notification,
+  District,
 } from "./types";
 import { firebaseService, deleteField } from "./services/firebaseService";
 import { auth } from "./lib/firebase";
@@ -596,10 +601,10 @@ const defaultTaxis: TaxiDriver[] = [
 
 const onboardingSlides = [
   {
-    title: "الدليل الشامل لأهالي قضاء الشرقاط",
-    description: "تطبيق متكامل يوفر لأهالي قضاء الشرقاط الكرام كافة الخدمات، العناوين، الأرقام الهامة، والأنشطة المحلية بسهولة ويسر من مكانك.",
+    title: "الدليل الشامل لمحافظة صلاح الدين",
+    description: "تطبيق متكامل يوفر لأهالي مدن وأقضية محافظة صلاح الدين الكرام كافة الخدمات، العناوين، الأرقام الهامة، والأنشطة المحلية بسهولة ويسر من مكانك.",
     image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800",
-    badge: "دليل الشرقاط الأول",
+    badge: "دليل صلاح الدين الأول",
     icon: "✨",
   },
   {
@@ -826,6 +831,26 @@ export default function App() {
       return [];
     }
   });
+
+  const [districts, setDistricts] = useState<District[]>(() => {
+    try {
+      const cached = localStorage.getItem("cached_districts");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return DEFAULT_DISTRICTS;
+    } catch {
+      return DEFAULT_DISTRICTS;
+    }
+  });
+  const [selectedDistrict, setSelectedDistrict] = useState<District | null>(null);
+
+  const activeDistricts = useMemo(() => {
+    return districts
+      .filter((d) => d.isActive !== false)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [districts]);
 
   const [doctorSpecialtiesList, setDoctorSpecialtiesList] = useState<DoctorSpecialty[]>(() => {
     try {
@@ -1144,6 +1169,10 @@ export default function App() {
   useEffect(() => {
     safeStorage.setItem("cached_doctor_specialties", JSON.stringify(doctorSpecialtiesList));
   }, [doctorSpecialtiesList]);
+
+  useEffect(() => {
+    safeStorage.setItem("cached_districts", JSON.stringify(districts));
+  }, [districts]);
   const [marketProducts, setMarketProducts] = useState<MarketProduct[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("cached_marketProducts") || "[]");
@@ -1311,7 +1340,7 @@ export default function App() {
 
   // Automated Cache Syncing to LocalStorage to prevent stale cache or data loss
   const [sidebarPage, setSidebarPage] = useState<
-    "about" | "privacy" | "contact" | "admin" | "terms" | null
+    "about" | "privacy" | "contact" | "admin" | "terms" | "districts" | null
   >(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -1489,14 +1518,21 @@ export default function App() {
 
     // 3) Optimized fetch from server for Doctors App active collections
     const fetchAll = async () => {
-      const [doctorsDocs, bannersDocs, settingsDocs, notificationsDocs, specsDocs, regionsDocs] = await Promise.all([
+      const [doctorsDocs, bannersDocs, settingsDocs, notificationsDocs, specsDocs, regionsDocs, districtsDocs] = await Promise.all([
         firebaseService.fetchCollectionOnce<Doctor>('doctors', undefined, 'desc', 150),
         firebaseService.fetchCollectionOnce<BannerAd>('banners', undefined, 'desc', 50),
         firebaseService.fetchCollectionOnce<any>('settings', undefined, 'desc', 10),
         firebaseService.fetchCollectionOnce<Notification>('notifications', undefined, 'desc', 50),
         firebaseService.fetchCollectionOnce<DoctorSpecialty>('doctor_specialties', 'order', 'asc', 100),
         firebaseService.fetchCollectionOnce<DoctorRegion>('doctor_regions', 'order', 'asc', 100),
+        firebaseService.fetchCollectionOnce<District>('districts', 'order', 'asc', 100),
       ]);
+
+      if (districtsDocs && districtsDocs.length > 0) {
+        const sorted = [...districtsDocs].sort((a, b) => (a.order || 0) - (b.order || 0));
+        setDistricts(sorted);
+        safeStorage.setItem('cached_districts', JSON.stringify(sorted));
+      }
 
       if (doctorsDocs && doctorsDocs.length > 0) {
         setDoctors(doctorsDocs);
@@ -1546,6 +1582,7 @@ export default function App() {
   const [adminView, setAdminView] = useState<
     | "main"
     | "doctors"
+    | "districts"
     | "taxis"
     | "banners"
     | "settings"
@@ -2187,7 +2224,7 @@ export default function App() {
       } else if (adminView === "notifications") {
         if (!isEdit) dataToSave.timestamp = Date.now();
         dataToSave.isRead = dataToSave.isRead ?? false;
-        dataToSave.title = dataToSave.title || "تنبيه من تطبيق الشرقاط 🔔";
+        dataToSave.title = dataToSave.title || "تنبيه من تطبيق دليل صلاح الدين 🔔";
         dataToSave.name = dataToSave.name || dataToSave.title;
         dataToSave.message = dataToSave.message || "";
       } else if (adminView === "doctors") {
@@ -2710,13 +2747,13 @@ export default function App() {
             <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm shadow-shirqat-primary/10 shrink-0">
               <img
                 src="/logo_shirqat.svg"
-                alt="دليل الشرقاط"
+                alt="دليل صلاح الدين"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
             </div>
             <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
-              دليل <span className="text-shirqat-primary font-black">الشرقاط</span>
+              دليل <span className="text-shirqat-primary font-black">صلاح الدين</span>
             </span>
           </button>
 
@@ -2836,6 +2873,48 @@ export default function App() {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Districts of Salahaddin Section (أقضية محافظة صلاح الدين) */}
+            {activeDistricts.length > 0 && (
+              <div className="px-3 space-y-2.5" dir="rtl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center font-black">
+                      <Compass size={16} />
+                    </div>
+                    <span className="font-display font-black text-sm text-slate-800 dark:text-white">
+                      أقضية محافظة صلاح الدين
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-400">
+                    {activeDistricts.length} أقضية معتمدة
+                  </span>
+                </div>
+
+                {/* Horizontal Scroll of District Cards */}
+                <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+                  {activeDistricts.map((dist) => (
+                    <button
+                      key={dist.id}
+                      onClick={() => setSelectedDistrict(dist)}
+                      className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs hover:shadow-xs hover:border-teal-400 dark:hover:border-teal-500 flex items-center gap-2.5 shrink-0 transition-all cursor-pointer active:scale-95 group text-right"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 flex items-center justify-center font-display font-black text-xs shrink-0 group-hover:scale-105 transition-transform">
+                        🏛️
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-display font-black text-xs sm:text-sm text-slate-900 dark:text-white block group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                          قضاء {dist.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-400 block font-bold">
+                          {dist.landmarks?.length || 0} معالم ووجهات
+                        </span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -3448,7 +3527,7 @@ export default function App() {
               <BookOpen size={18} />
             </div>
             <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
-              دليل الشرقاط
+              دليل صلاح الدين
             </span>
           </div>
 
@@ -3989,13 +4068,13 @@ export default function App() {
           <div className="w-20 h-20 bg-white/15 rounded-full p-1 overflow-hidden border border-white/25 mb-3 shadow-lg">
             <img
               src="/logo_shirqat.svg"
-              alt="دليل الشرقاط"
+              alt="دليل صلاح الدين"
               className="w-full h-full object-cover rounded-full"
               referrerPolicy="no-referrer"
             />
           </div>
           <h2 className="text-2xl font-display font-black mb-1">
-            دليل <span className="text-amber-300">الشرقاط</span>
+            دليل <span className="text-amber-300">صلاح الدين</span>
           </h2>
           <p className="text-xs font-bold opacity-90">
             الإعدادات والمعلومات العامة • الإصدار 3.0
@@ -4019,6 +4098,11 @@ export default function App() {
           </span>
           <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700/60 overflow-hidden shadow-xs">
             {[
+              {
+                icon: <Compass size={18} className="text-teal-500" />,
+                label: "أقضية ومعالم صلاح الدين",
+                page: "districts",
+              },
               {
                 icon: <Info size={18} className="text-indigo-500" />,
                 label: "من نحن",
@@ -4118,7 +4202,7 @@ export default function App() {
         {/* Footer */}
         <div className="text-center pt-4 opacity-60">
           <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500">
-            جميع الحقوق محفوظة © دليل الشرقاط {new Date().getFullYear()}
+            جميع الحقوق محفوظة © دليل صلاح الدين {new Date().getFullYear()}
           </p>
         </div>
       </div>
@@ -4314,16 +4398,33 @@ export default function App() {
               <div className="w-16 h-16 rounded-2xl bg-white/10 p-2 flex items-center justify-center">
                 <img
                   src="/logo_shirqat.svg"
-                  alt="دليل الشرقاط"
+                  alt="دليل صلاح الدين"
                   className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <h1 className="text-lg font-display font-black text-white">
-                دليل <span className="text-emerald-400">الشرقاط</span>
+              <h1 className="text-xl font-display font-black text-white">
+                دليل <span className="text-emerald-400">صلاح الدين</span>
               </h1>
+              <p className="text-xs text-slate-300 font-bold">
+                دليل الأقضية، الأطباء، والخدمات الشاملة
+              </p>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Standalone District Detail Page */}
+      <AnimatePresence>
+        {selectedDistrict && (
+          <div className="fixed inset-0 z-[600] overflow-y-auto bg-slate-50 dark:bg-slate-950">
+            <DistrictDetailPage
+              district={selectedDistrict}
+              allDistricts={activeDistricts}
+              onBack={() => setSelectedDistrict(null)}
+              onSelectDistrict={(d) => setSelectedDistrict(d)}
+            />
+          </div>
         )}
       </AnimatePresence>
 
@@ -4825,6 +4926,8 @@ export default function App() {
                 setDoctorRegionsList={setDoctorRegionsList}
                 serviceCategoriesList={serviceCategoriesList}
                 setServiceCategoriesList={setServiceCategoriesList}
+                districts={districts}
+                setDistricts={setDistricts}
               />
             </Suspense>
           </OverlayPage>
@@ -4905,17 +5008,70 @@ export default function App() {
                 <div className="w-20 h-20 bg-white/15 rounded-full p-1 overflow-hidden border border-white/30 mb-4 shadow-lg">
                   <img
                     src="/logo_shirqat.svg"
-                    alt="دليل الشرقاط"
+                    alt="دليل صلاح الدين"
                     className="w-full h-full object-cover rounded-full"
                     referrerPolicy="no-referrer"
                   />
                 </div>
                 <h3 className="text-2xl font-display font-black mb-3">
-                  تطبيق دليل الشرقاط
+                  تطبيق دليل صلاح الدين
                 </h3>
                 <p className="text-base font-medium leading-relaxed opacity-95 max-w-md">
-                  تطبيق <span className="font-black text-amber-300">دليل الشرقاط</span> هو التطبيق الخدمي المباشر لقضاء الشرقاط، تم إنشاؤه لتوفير خدمة مجانية تسهّل على المواطنين البحث عن أرقام هواتف الأطباء، العيادات التخصصية، والإشعارات العاجلة.
+                  تطبيق <span className="font-black text-amber-300">دليل صلاح الدين</span> هو التطبيق الخدمي الشامل لمحافظة صلاح الدين وأقضيتها، تم إنشاؤه لتوفير خدمة مجانية تسهّل على المواطنين تصفح الأقضية والمعالم السياحية والتاريخية، والبحث عن أرقام هواتف الأطباء، العيادات التخصصية، والخدمات والإشعارات العاجلة.
                 </p>
+              </div>
+            </div>
+          </OverlayPage>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {sidebarPage === "districts" && (
+          <OverlayPage title="أقضية ومعالم صلاح الدين" onBack={() => setSidebarPage(null)}>
+            <div className="p-4 sm:p-5 space-y-4 text-right font-sans" dir="rtl">
+              <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 p-6 rounded-3xl text-white shadow-md">
+                <span className="text-[11px] font-black px-3 py-1 rounded-full bg-white/20 inline-block mb-2">
+                  دليل الأقضية المعتمدة
+                </span>
+                <h3 className="text-xl sm:text-2xl font-display font-black">
+                  أقضية محافظة صلاح الدين
+                </h3>
+                <p className="text-xs sm:text-sm text-emerald-50/90 mt-1.5 leading-relaxed font-normal">
+                  تصفح مدن وأقضية المحافظة العريقة وتعرف على أبرز معالمها التاريخية، التراثية، السياحية، والطبيعية.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {activeDistricts.map((d) => (
+                  <div
+                    key={d.id}
+                    onClick={() => {
+                      setSelectedDistrict(d);
+                    }}
+                    className="p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-sm hover:border-teal-400 dark:hover:border-teal-500 transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center font-display font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
+                        {d.order || 1}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-display font-black text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                            قضاء {d.name}
+                          </h4>
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200">
+                            {d.landmarks?.length || 0} معالم
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-1 font-normal">
+                          {d.summary}
+                        </p>
+                      </div>
+                    </div>
+
+                    <ChevronLeft size={18} className="text-slate-400 group-hover:text-teal-600 shrink-0 transition-colors" />
+                  </div>
+                ))}
               </div>
             </div>
           </OverlayPage>
@@ -5053,7 +5209,7 @@ export default function App() {
                 تسجيل دخول الإدارة
               </h3>
               <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 leading-relaxed mb-6">
-                هذه اللوحة مخصصة لإدارة تطبيق دليل الشرقاط فقط (تحديث المحتوى والرد على الطلبات).
+                هذه اللوحة مخصصة لإدارة تطبيق دليل صلاح الدين فقط (تحديث المحتوى والرد على الطلبات).
               </p>
 
               <button

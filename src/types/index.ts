@@ -235,3 +235,23 @@ export interface Notification {
   timestamp: number;
   isRead?: boolean;
 }
+
+export type LandmarkType = "تاريخي" | "سياحي" | "تراثي" | "طبيعي" | "ثقافي";
+
+export interface Landmark {
+  id: string;
+  name: string;
+  description: string;
+  type: LandmarkType;
+}
+
+export interface District {
+  id: string;
+  name: string;
+  summary: string;
+  order: number;
+  isActive: boolean;
+  landmarks: Landmark[];
+  createdAt?: any;
+  updatedAt?: any;
+}

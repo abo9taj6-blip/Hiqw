@@ -21,6 +21,7 @@ import {
   Calendar,
   Phone,
   MapPin,
+  Landmark,
 } from "lucide-react";
 import {
   Doctor,
@@ -29,15 +30,18 @@ import {
   DoctorSpecialty,
   DoctorRegion,
   ServiceCategory,
+  District,
 } from "../types";
 import { excelService } from "../services/excelService";
 import { firebaseService } from "../services/firebaseService";
 import { InteractiveMapPicker } from "./InteractiveMapPicker";
+import { DistrictAdminManager } from "./DistrictAdminManager";
 
 interface AdminPanelProps {
   adminView:
     | "main"
     | "doctors"
+    | "districts"
     | "banners"
     | "settings"
     | "medical_complexes"
@@ -51,6 +55,7 @@ interface AdminPanelProps {
     view:
       | "main"
       | "doctors"
+      | "districts"
       | "banners"
       | "settings"
       | "medical_complexes"
@@ -107,6 +112,8 @@ interface AdminPanelProps {
   adminSelectedOffer?: any;
   setAdminSelectedOffer?: any;
   adminOfferProducts?: any[];
+  districts?: District[];
+  setDistricts?: React.Dispatch<React.SetStateAction<District[]>>;
 }
 
 export const AdminPanel = (props: AdminPanelProps) => {
@@ -128,6 +135,8 @@ export const AdminPanel = (props: AdminPanelProps) => {
     deleteItem,
     doctors = [],
     banners = [],
+    districts = [],
+    setDistricts,
     medicalComplexes = [],
     adminSelectedStore,
     setAdminSelectedStore,
@@ -602,6 +611,15 @@ export const AdminPanel = (props: AdminPanelProps) => {
       count: doctors?.length || 0,
     },
     {
+      id: "districts",
+      label: "إدارة الأقضية",
+      subtitle: "إدارة أقضية محافظة صلاح الدين، ترتيب الظهور، وإدارة المعالم والوجهات",
+      icon: <Landmark size={28} />,
+      badgeColor: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border-teal-300",
+      accentBg: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+      count: districts?.length || 0,
+    },
+    {
       id: "banners",
       label: "إدارة البنرات الإعلانية",
       subtitle: "إضافة وتعديل البنرات الإعلانية المتحركة والعروض الترويجية",
@@ -672,7 +690,7 @@ export const AdminPanel = (props: AdminPanelProps) => {
           </div>
 
           {/* Direct Add Button in Sticky Header for Fast Access */}
-          {adminView !== "main" && !isAdding && (
+          {adminView !== "main" && adminView !== "districts" && !isAdding && (
             <button
               onClick={startAdd}
               className="h-11 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 active:scale-95 transition-all shadow-md cursor-pointer shrink-0"
@@ -725,6 +743,12 @@ export const AdminPanel = (props: AdminPanelProps) => {
               ))}
             </div>
           </div>
+        ) : adminView === "districts" ? (
+          <DistrictAdminManager
+            districts={districts || []}
+            setDistricts={setDistricts || (() => {})}
+            adminSearch={adminSearch}
+          />
         ) : (
           /* ================= ACTIVE SECTION DETAIL VIEW ================= */
           <div className="space-y-5 animate-in fade-in duration-200">

@@ -34,6 +34,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Districts collection
+    match /districts/{districtId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Main directory collections
     match /doctors/{doctorId} {
       allow read: if true;

@@ -188,7 +188,7 @@ export const DoctorLocationMap: React.FC<DoctorLocationMapProps> = ({ doctor }) 
               موقع العيادة على الخريطة
             </h4>
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-              دليل الشرقاط - خريطة الأطباء المرخصة
+              دليل صلاح الدين - خريطة الأطباء المرخصة
             </span>
           </div>
         </div>

@@ -385,9 +385,24 @@
         "createdAt": { "type": "number" }
       },
       "required": ["id", "name"]
+    },
+    "District": {
+      "title": "District",
+      "description": "Salahaddin province districts with key landmarks",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "summary": { "type": "string" },
+        "order": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "landmarks": { "type": "array" }
+      },
+      "required": ["id", "name", "summary", "order", "isActive", "landmarks"]
     }
   },
   "firestore": {
+    "/districts/{districtId}": { "schema": "District", "description": "Districts of Salahaddin province" },
     "/service_categories/{categoryId}": { "schema": "ServiceCategory", "description": "Service categories and trades" },
     "/users/{uid}": { "schema": "User", "description": "User profiles and roles" },
     "/market_listings/{listingId}": { "schema": "MarketListing", "description": "Classifieds and market listings" },
