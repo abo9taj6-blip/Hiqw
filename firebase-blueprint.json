@@ -399,9 +399,51 @@
         "landmarks": { "type": "array" }
       },
       "required": ["id", "name", "summary", "order", "isActive", "landmarks"]
+    },
+    "CouncilMember": {
+      "title": "CouncilMember",
+      "description": "Elected member of Salah Al-Din Provincial Council",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "committee": { "type": "string" },
+        "electoralDistrict": { "type": "string" },
+        "bio": { "type": "string" },
+        "photo": { "type": "string" },
+        "completedRequestsCount": { "type": "number" },
+        "activeRequestsCount": { "type": "number" },
+        "officeLocation": { "type": "string" },
+        "phone": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "facebook": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "name", "title", "completedRequestsCount", "isActive"]
+    },
+    "CouncilActivity": {
+      "title": "CouncilActivity",
+      "description": "Daily activity or event of Salah Al-Din Provincial Council member",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "memberId": { "type": "string" },
+        "memberName": { "type": "string" },
+        "memberRole": { "type": "string" },
+        "images": { "type": "array" },
+        "date": { "type": "string" },
+        "location": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "title", "description", "memberId", "images", "date"]
     }
   },
   "firestore": {
+    "/council_members/{memberId}": { "schema": "CouncilMember", "description": "Salah Al-Din Provincial Council members" },
+    "/council_activities/{activityId}": { "schema": "CouncilActivity", "description": "Council members daily activities and events" },
     "/districts/{districtId}": { "schema": "District", "description": "Districts of Salahaddin province" },
     "/service_categories/{categoryId}": { "schema": "ServiceCategory", "description": "Service categories and trades" },
     "/users/{uid}": { "schema": "User", "description": "User profiles and roles" },

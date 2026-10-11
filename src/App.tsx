@@ -59,6 +59,7 @@ import {
   Moon,
   LayoutDashboard,
   Users,
+  Activity,
   TrendingUp,
   ShieldCheck,
   Filter,
@@ -106,7 +107,12 @@ import { DoctorLocationMap } from "./components/DoctorLocationMap";
 import { DistrictDetailPage } from "./components/DistrictDetailPage";
 import { SearchBar } from "./components/SearchBar";
 import { AdminPanel } from "./components/AdminPanel";
-import { DEFAULT_DISTRICTS } from "./data/salahaddin";
+import { DEFAULT_DISTRICTS, DEFAULT_RESTAURANTS } from "./data/salahaddin";
+import { CouncilMemberCard } from "./components/CouncilMemberCard";
+import { CouncilActivityCard } from "./components/CouncilActivityCard";
+import { CouncilMemberProfileModal } from "./components/CouncilMemberProfileModal";
+import { DEFAULT_COUNCIL_MEMBERS, DEFAULT_COUNCIL_ACTIVITIES } from "./data/councilData";
+import { CouncilMember, CouncilActivity } from "./types";
 
 // Resilient LocalStorage Manager to prevent QuotaExceededError and quota overflows
 export const safeStorage = {
@@ -1028,11 +1034,87 @@ export default function App() {
 
   const [marketStores, setMarketStores] = useState<MarketStore[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem("cached_marketStores") || "[]");
+      const cached = localStorage.getItem("cached_marketStores");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return DEFAULT_RESTAURANTS;
     } catch {
-      return [];
+      return DEFAULT_RESTAURANTS;
     }
   });
+
+  const [selectedRestaurant, setSelectedRestaurant] = useState<MarketStore | null>(null);
+
+  // Salah Al-Din Provincial Council States
+  const [councilMembers, setCouncilMembers] = useState<CouncilMember[]>(() => {
+    try {
+      const cached = safeStorage.getItem("cached_councilMembers");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_COUNCIL_MEMBERS;
+  });
+
+  const [councilActivities, setCouncilActivities] = useState<CouncilActivity[]>(() => {
+    try {
+      const cached = safeStorage.getItem("cached_councilActivities");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_COUNCIL_ACTIVITIES;
+  });
+
+  const [selectedCouncilMember, setSelectedCouncilMember] = useState<CouncilMember | null>(null);
+  const [selectedActivityImage, setSelectedActivityImage] = useState<string | null>(null);
+  const [councilSearch, setCouncilSearch] = useState("");
+  const [councilFilter, setCouncilFilter] = useState<string>("all");
+
+  const filteredCouncilMembers = useMemo(() => {
+    return councilMembers
+      .filter((m) => {
+        if (!m.isActive) return false;
+
+        // Filter by role or category
+        if (councilFilter === "leadership") {
+          const isLead =
+            m.title.includes("رئيس مجلس") ||
+            m.title.includes("نائب رئيس") ||
+            m.order === 1 ||
+            m.order === 2;
+          if (!isLead) return false;
+        } else if (councilFilter === "committees") {
+          const isChair = m.title.includes("رئيس لجنة") || m.title.includes("رئيسة لجنة");
+          if (!isChair) return false;
+        } else if (councilFilter !== "all") {
+          if (!m.electoralDistrict?.includes(councilFilter)) return false;
+        }
+
+        // Filter by search string
+        if (councilSearch.trim()) {
+          const q = councilSearch.toLowerCase().trim();
+          const matches =
+            m.name.toLowerCase().includes(q) ||
+            m.title.toLowerCase().includes(q) ||
+            (m.committee && m.committee.toLowerCase().includes(q)) ||
+            (m.electoralDistrict && m.electoralDistrict.toLowerCase().includes(q)) ||
+            (m.bio && m.bio.toLowerCase().includes(q));
+          if (!matches) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => (a.order || 99) - (b.order || 99));
+  }, [councilMembers, councilFilter, councilSearch]);
+
+  const totalCompletedCouncilRequests = useMemo(() => {
+    return councilMembers.reduce((sum, m) => sum + (m.completedRequestsCount || 0), 0);
+  }, [councilMembers]);
 
   const dirList = useMemo(() => {
     const doctorItems = doctors.map((d) => ({
@@ -1496,6 +1578,11 @@ export default function App() {
     loadFromCache('cached_notifications', setNotifications);
     loadFromCache('cached_doctorSpecialties', setDoctorSpecialtiesList);
     loadFromCache('cached_doctorRegions', setDoctorRegionsList);
+    loadFromCache('cached_districts', setDistricts);
+    loadFromCache('cached_taxis', setTaxis);
+    loadFromCache('cached_marketStores', setMarketStores);
+    loadFromCache('cached_councilMembers', setCouncilMembers);
+    loadFromCache('cached_councilActivities', setCouncilActivities);
 
     // Load settings from cache if needed
     try {
@@ -1516,9 +1603,9 @@ export default function App() {
       return; // Persistent local cache is valid (0 reads consumed)
     }
 
-    // 3) Optimized fetch from server for Doctors App active collections
+    // 3) Optimized fetch from server for active collections
     const fetchAll = async () => {
-      const [doctorsDocs, bannersDocs, settingsDocs, notificationsDocs, specsDocs, regionsDocs, districtsDocs] = await Promise.all([
+      const [doctorsDocs, bannersDocs, settingsDocs, notificationsDocs, specsDocs, regionsDocs, districtsDocs, taxisDocs, storesDocs, councilMembersDocs, councilActivitiesDocs] = await Promise.all([
         firebaseService.fetchCollectionOnce<Doctor>('doctors', undefined, 'desc', 150),
         firebaseService.fetchCollectionOnce<BannerAd>('banners', undefined, 'desc', 50),
         firebaseService.fetchCollectionOnce<any>('settings', undefined, 'desc', 10),
@@ -1526,12 +1613,36 @@ export default function App() {
         firebaseService.fetchCollectionOnce<DoctorSpecialty>('doctor_specialties', 'order', 'asc', 100),
         firebaseService.fetchCollectionOnce<DoctorRegion>('doctor_regions', 'order', 'asc', 100),
         firebaseService.fetchCollectionOnce<District>('districts', 'order', 'asc', 100),
+        firebaseService.fetchCollectionOnce<TaxiDriver>('taxis', undefined, 'desc', 100),
+        firebaseService.fetchCollectionOnce<MarketStore>('market_stores', undefined, 'desc', 100),
+        firebaseService.fetchCollectionOnce<CouncilMember>('council_members', 'order', 'asc', 100),
+        firebaseService.fetchCollectionOnce<CouncilActivity>('council_activities', 'createdAt', 'desc', 100),
       ]);
+
+      if (councilMembersDocs && councilMembersDocs.length > 0) {
+        setCouncilMembers(councilMembersDocs);
+        safeStorage.setItem('cached_councilMembers', JSON.stringify(councilMembersDocs));
+      }
+
+      if (councilActivitiesDocs && councilActivitiesDocs.length > 0) {
+        setCouncilActivities(councilActivitiesDocs);
+        safeStorage.setItem('cached_councilActivities', JSON.stringify(councilActivitiesDocs));
+      }
 
       if (districtsDocs && districtsDocs.length > 0) {
         const sorted = [...districtsDocs].sort((a, b) => (a.order || 0) - (b.order || 0));
         setDistricts(sorted);
         safeStorage.setItem('cached_districts', JSON.stringify(sorted));
+      }
+
+      if (taxisDocs && taxisDocs.length > 0) {
+        setTaxis(taxisDocs);
+        safeStorage.setItem('cached_taxis', JSON.stringify(taxisDocs));
+      }
+
+      if (storesDocs && storesDocs.length > 0) {
+        setMarketStores(storesDocs);
+        safeStorage.setItem('cached_marketStores', JSON.stringify(storesDocs));
       }
 
       if (doctorsDocs && doctorsDocs.length > 0) {
@@ -1581,6 +1692,8 @@ export default function App() {
 
   const [adminView, setAdminView] = useState<
     | "main"
+    | "council_members"
+    | "council_activities"
     | "doctors"
     | "districts"
     | "taxis"
@@ -1856,6 +1969,37 @@ export default function App() {
     });
   }, [taxis, taxiSearch, taxiCategoryFilter]);
 
+  const filteredRestaurants = useMemo(() => {
+    return marketStores.filter((store) => {
+      if (store.isActive === false) return false;
+
+      // Category / Classification Filter
+      if (restaurantCategoryFilter && restaurantCategoryFilter !== "الكل") {
+        const filterVal = restaurantCategoryFilter.toLowerCase().trim();
+        const cat = (store.category || "").toLowerCase();
+        const desc = (store.description || "").toLowerCase();
+        if (!cat.includes(filterVal) && !desc.includes(filterVal)) return false;
+      }
+
+      // Search Filter
+      if (!restaurantSearch.trim()) return true;
+      const q = normalizeArabic(restaurantSearch);
+      const name = normalizeArabic(String(store.name || ""));
+      const cat = normalizeArabic(String(store.category || ""));
+      const desc = normalizeArabic(String(store.description || ""));
+      const location = normalizeArabic(String(store.location || ""));
+      const phone = String(store.phone || "");
+
+      return (
+        name.includes(q) ||
+        cat.includes(q) ||
+        desc.includes(q) ||
+        location.includes(q) ||
+        phone.includes(q)
+      );
+    });
+  }, [marketStores, restaurantSearch, restaurantCategoryFilter]);
+
   const resetViews = () => {
     setSubTab(null);
     setSelectedDoctor(null);
@@ -1974,6 +2118,8 @@ export default function App() {
       serviceOffers: "serviceOffers",
       taxis: "taxis",
       notifications: "notifications",
+      council_members: "council_members",
+      council_activities: "council_activities",
     };
 
     let firestoreCol = collectionMapping[type];
@@ -2049,6 +2195,18 @@ export default function App() {
         safeStorage.setItem("cached_notifications", JSON.stringify(next));
         return next;
       });
+    } else if (type === "council_members") {
+      setCouncilMembers((prev) => {
+        const next = prev.filter((item) => item.id !== id);
+        safeStorage.setItem("cached_councilMembers", JSON.stringify(next));
+        return next;
+      });
+    } else if (type === "council_activities") {
+      setCouncilActivities((prev) => {
+        const next = prev.filter((item) => item.id !== id);
+        safeStorage.setItem("cached_councilActivities", JSON.stringify(next));
+        return next;
+      });
     }
 
     if (firestoreCol) {
@@ -2106,6 +2264,8 @@ export default function App() {
       serviceOffers: "serviceOffers",
       taxis: "taxis",
       notifications: "notifications",
+      council_members: "council_members",
+      council_activities: "council_activities",
     };
 
     let firestoreCol = collectionMapping[adminView];
@@ -2227,6 +2387,27 @@ export default function App() {
         dataToSave.title = dataToSave.title || "تنبيه من تطبيق دليل صلاح الدين 🔔";
         dataToSave.name = dataToSave.name || dataToSave.title;
         dataToSave.message = dataToSave.message || "";
+      } else if (adminView === "council_members") {
+        dataToSave.name = dataToSave.name || dataToSave.title;
+        dataToSave.title = dataToSave.title || "عضو المجلس";
+        dataToSave.photo = dataToSave.image || dataToSave.photo;
+        dataToSave.completedRequestsCount = Number(dataToSave.completedRequestsCount) || 0;
+        dataToSave.activeRequestsCount = Number(dataToSave.activeRequestsCount) || 0;
+        dataToSave.isActive = dataToSave.isActive ?? true;
+        if (!isEdit) dataToSave.createdAt = Date.now();
+        dataToSave.updatedAt = Date.now();
+      } else if (adminView === "council_activities") {
+        dataToSave.title = dataToSave.title || "نشاط مجلس المحافظة";
+        dataToSave.date = dataToSave.date || "اليوم";
+        if (Array.isArray(dataToSave.images)) {
+          dataToSave.images = dataToSave.images.filter(Boolean).slice(0, 4);
+        } else if (dataToSave.image) {
+          dataToSave.images = [dataToSave.image];
+        } else {
+          dataToSave.images = [];
+        }
+        if (!isEdit) dataToSave.createdAt = Date.now();
+        dataToSave.updatedAt = Date.now();
       } else if (adminView === "doctors") {
         const latRaw =
           formData.latitude !== undefined && formData.latitude !== null
@@ -2403,6 +2584,24 @@ export default function App() {
             safeStorage.setItem("cached_notifications", JSON.stringify(next));
             return next;
           });
+        } else if (adminView === "council_members") {
+          setCouncilMembers((prev) => {
+            const exists = prev.some((i) => i.id === savedId);
+            const next = exists
+              ? prev.map((i) => (i.id === savedId ? (fullSavedItem as CouncilMember) : i))
+              : [fullSavedItem as CouncilMember, ...prev];
+            safeStorage.setItem("cached_councilMembers", JSON.stringify(next));
+            return next;
+          });
+        } else if (adminView === "council_activities") {
+          setCouncilActivities((prev) => {
+            const exists = prev.some((i) => i.id === savedId);
+            const next = exists
+              ? prev.map((i) => (i.id === savedId ? (fullSavedItem as CouncilActivity) : i))
+              : [fullSavedItem as CouncilActivity, ...prev];
+            safeStorage.setItem("cached_councilActivities", JSON.stringify(next));
+            return next;
+          });
         }
 
         alert("✅ تم حفظ البيانات بنجاح");
@@ -2429,6 +2628,25 @@ export default function App() {
   const startAdd = () => {
     setEditingItem(null);
     const defaults: any = {};
+    if (adminView === "council_members") {
+      defaults.isActive = true;
+      defaults.completedRequestsCount = 0;
+      defaults.activeRequestsCount = 0;
+      defaults.title = "عضو المجلس";
+      defaults.electoralDistrict = "قضاء تكريت";
+      defaults.officeLocation = "ديوان مجلس محافظة صلاح الدين - تكريت";
+    }
+    if (adminView === "council_activities") {
+      defaults.date = "اليوم";
+      defaults.category = "جلسة رسمية";
+      defaults.images = [];
+      if (councilMembers.length > 0) {
+        defaults.memberId = councilMembers[0].id;
+        defaults.memberName = councilMembers[0].name;
+        defaults.memberRole = councilMembers[0].title;
+        defaults.memberPhoto = councilMembers[0].photo;
+      }
+    }
     if (adminView === "doctors") defaults.category = "doctor";
     if (adminView === "banners") {
       defaults.type = "internal";
@@ -2744,17 +2962,20 @@ export default function App() {
             }}
             className="flex items-center gap-2 justify-center cursor-pointer active:scale-95 transition-transform z-10"
           >
-            <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm shadow-shirqat-primary/10 shrink-0">
+            <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm shadow-emerald-600/10 shrink-0">
               <img
                 src="/logo_shirqat.svg"
-                alt="دليل صلاح الدين"
+                alt="مجلس محافظة صلاح الدين"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
             </div>
-            <span className="font-display font-black text-sm sm:text-base text-slate-800 dark:text-white whitespace-nowrap">
-              دليل <span className="text-shirqat-primary font-black">صلاح الدين</span>
-            </span>
+            <div className="flex flex-col text-right">
+              <span className="font-display font-black text-xs sm:text-sm text-slate-800 dark:text-white whitespace-nowrap">
+                مجلس محافظة <span className="text-emerald-600 dark:text-emerald-400 font-black">صلاح الدين</span>
+              </span>
+              <span className="text-[9px] font-bold text-slate-400">بوابة الأعضاء والنشاطات الرسمية</span>
+            </div>
           </button>
 
           {/* Left Side (على اليسار): Notifications Button (Show ONLY on main home) */}
@@ -2877,125 +3098,205 @@ export default function App() {
               </div>
             )}
 
-            {/* Districts of Salahaddin Section (أقضية محافظة صلاح الدين) */}
-            {activeDistricts.length > 0 && (
-              <div className="px-3 space-y-2.5" dir="rtl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center font-black">
-                      <Compass size={16} />
-                    </div>
-                    <span className="font-display font-black text-sm text-slate-800 dark:text-white">
-                      أقضية محافظة صلاح الدين
+            {/* Official Council Overview & Stats Card */}
+            <div className="px-3" dir="rtl">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 p-4 sm:p-5 text-white border border-emerald-500/20 shadow-md">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                <div className="relative z-10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] sm:text-xs font-black px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      جمهورية العراق • مجلس محافظة صلاح الدين
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-bold">
+                      الدورة الحالية
                     </span>
                   </div>
-                  <span className="text-[11px] font-bold text-slate-400">
-                    {activeDistricts.length} أقضية معتمدة
+
+                  <div>
+                    <h2 className="text-base sm:text-lg font-display font-black text-white leading-tight">
+                      مجلس محافظة صلاح الدين
+                    </h2>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      المنصة الرسمية الموحدة لأعضاء المجلس ولجانه الدائمة، ومتابعة النشاطات الميدانية والطلبات المنجزة لخدمة مواطني المحافظة.
+                    </p>
+                  </div>
+
+                  {/* 3 Key Statistics Cards */}
+                  <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
+                      <div className="text-base sm:text-lg font-black text-emerald-400 font-mono">
+                        {councilMembers.filter((m) => m.isActive).length}
+                      </div>
+                      <div className="text-[10px] text-slate-300 font-bold mt-0.5">
+                        أعضاء المجلس
+                      </div>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
+                      <div className="text-base sm:text-lg font-black text-amber-300 font-mono">
+                        {totalCompletedCouncilRequests.toLocaleString("en-US")}
+                      </div>
+                      <div className="text-[10px] text-slate-300 font-bold mt-0.5">
+                        طلب منجز ✓
+                      </div>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
+                      <div className="text-base sm:text-lg font-black text-sky-400 font-mono">
+                        {councilActivities.length}
+                      </div>
+                      <div className="text-[10px] text-slate-300 font-bold mt-0.5">
+                        نشاط ومتابعة
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 1: LATEST ACTIVITIES (أحدث نشاطات المجلس الميدانية واليومية) */}
+            {councilActivities.length > 0 && (
+              <div className="px-3 space-y-3" dir="rtl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black">
+                      <Activity size={18} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-display font-black text-sm sm:text-base text-slate-900 dark:text-white">
+                          أحدث النشاطات والجلسات الرسمية
+                        </h3>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400">
+                        توثيق يومي للزيارات الميدانية وجلسات المجلس واللجان
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    {councilActivities.length} نشاط
                   </span>
                 </div>
 
-                {/* Horizontal Scroll of District Cards */}
-                <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
-                  {activeDistricts.map((dist) => (
-                    <button
-                      key={dist.id}
-                      onClick={() => setSelectedDistrict(dist)}
-                      className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs hover:shadow-xs hover:border-teal-400 dark:hover:border-teal-500 flex items-center gap-2.5 shrink-0 transition-all cursor-pointer active:scale-95 group text-right"
-                    >
-                      <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 flex items-center justify-center font-display font-black text-xs shrink-0 group-hover:scale-105 transition-transform">
-                        🏛️
-                      </div>
-                      <div className="min-w-0">
-                        <span className="font-display font-black text-xs sm:text-sm text-slate-900 dark:text-white block group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                          قضاء {dist.name}
-                        </span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-400 block font-bold">
-                          {dist.landmarks?.length || 0} معالم ووجهات
-                        </span>
-                      </div>
-                    </button>
+                {/* Activities List */}
+                <div className="space-y-3">
+                  {councilActivities.slice(0, 4).map((activity) => (
+                    <CouncilActivityCard
+                      key={activity.id}
+                      activity={activity}
+                      onSelectMember={(memberId) => {
+                        const target = councilMembers.find((m) => m.id === memberId);
+                        if (target) setSelectedCouncilMember(target);
+                      }}
+                      onImageClick={(img) => setSelectedActivityImage(img)}
+                    />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Direct Doctors Section */}
-            <div className="px-3 space-y-2.5" dir="rtl">
-              {/* Search Bar with "بحث مخصص" Button */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <SearchBar
-                    value={search}
-                    onChange={setSearch}
-                    placeholder="ابحث عن طبيبك..."
-                    focusRingClass="focus:ring-emerald-500/20"
-                    className="mb-0"
-                  />
+            {/* SECTION 2: COUNCIL MEMBERS (أعضاء مجلس محافظة صلاح الدين) */}
+            <div className="px-3 space-y-3" dir="rtl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">
+                    <Users size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-black text-sm sm:text-base text-slate-900 dark:text-white">
+                      أعضاء مجلس المحافظة
+                    </h3>
+                    <p className="text-[10px] font-bold text-slate-400">
+                      بروفايل تعريفي، اللجان، المقرات، ونسب إنجاز الطلبات
+                    </p>
+                  </div>
                 </div>
-
-                {/* Specialty Filter Button (زر التخصص) */}
-                <button
-                  type="button"
-                  onClick={() => setIsCustomDoctorSearchOpen(true)}
-                  className={`h-12 px-3.5 sm:px-4 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 border shadow-xs cursor-pointer active:scale-95 shrink-0 ${
-                    doctorCategoryFilter !== "الكل"
-                      ? "bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/20 shadow-md"
-                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-700"
-                  }`}
-                  title="عرض واختيار التخصص الطبي"
-                >
-                  <Stethoscope size={15} className={doctorCategoryFilter !== "الكل" ? "text-white" : "text-emerald-600 dark:text-emerald-400"} />
-                  <span className="whitespace-nowrap">التخصص</span>
-                  {doctorCategoryFilter !== "الكل" && (
-                    <span className="w-2 h-2 rounded-full bg-white shadow-xs" />
-                  )}
-                </button>
+                <span className="text-[11px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+                  {filteredCouncilMembers.length} عضواً
+                </span>
               </div>
 
-              {/* Active Filter Badges */}
-              {doctorCategoryFilter !== "الكل" && (
-                <div className="flex items-center gap-1.5 flex-wrap pt-0.5 text-xs">
-                  <span className="text-[10px] font-bold text-slate-400">التخصص المحدد:</span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-black">
-                    <span>🩺 {doctorCategoryFilter}</span>
-                    <button
-                      type="button"
-                      onClick={() => setDoctorCategoryFilter("الكل")}
-                      className="hover:text-rose-500 cursor-pointer"
-                      title="إلغاء تصفية التخصص"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
+              {/* Council Members Search Bar */}
+              <div className="relative">
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm">
+                  🔍
+                </span>
+                <input
+                  type="text"
+                  placeholder="ابحث عن عضو المجلس، المنصب، اللجنة، أو القضاء..."
+                  value={councilSearch}
+                  onChange={(e) => setCouncilSearch(e.target.value)}
+                  className="w-full h-11 pr-10 pl-9 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs text-right"
+                />
+                {councilSearch && (
                   <button
-                    type="button"
-                    onClick={() => setDoctorCategoryFilter("الكل")}
-                    className="text-[10px] font-black text-rose-500 hover:underline mr-auto cursor-pointer"
+                    onClick={() => setCouncilSearch("")}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors text-[10px]"
                   >
-                    عرض جميع التخصصات
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Filters Horizontal Bar */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar scrollbar-none">
+                {[
+                  { id: "all", label: "الكل" },
+                  { id: "leadership", label: "هيئة الرئاسة" },
+                  { id: "committees", label: "رؤساء اللجان" },
+                  { id: "تكريت", label: "قضاء تكريت" },
+                  { id: "سامراء", label: "قضاء سامراء" },
+                  { id: "الشرقاط", label: "قضاء الشرقاط" },
+                  { id: "بلد", label: "قضاء بلد" },
+                  { id: "طوزخورماتو", label: "قضاء طوزخورماتو" },
+                  { id: "بيجي", label: "قضاء بيجي" },
+                  { id: "الدجيل", label: "قضاء الدجيل" },
+                  { id: "الدور", label: "قضاء الدور" },
+                ].map((flt) => {
+                  const isActive = councilFilter === flt.id;
+                  return (
+                    <button
+                      key={flt.id}
+                      type="button"
+                      onClick={() => setCouncilFilter(flt.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
+                        isActive
+                          ? "bg-emerald-600 text-white shadow-xs shadow-emerald-600/30"
+                          : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                      }`}
+                    >
+                      {flt.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Council Members List */}
+              {filteredCouncilMembers.length === 0 ? (
+                <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800 space-y-2">
+                  <p>لا يوجد أعضاء مطابقين للبحث أو التصفية الحالية</p>
+                  <button
+                    onClick={() => {
+                      setCouncilSearch("");
+                      setCouncilFilter("all");
+                    }}
+                    className="text-emerald-600 font-black text-xs hover:underline cursor-pointer"
+                  >
+                    إعادة ضبط البحث
                   </button>
                 </div>
-              )}
-
-              {/* Doctors List */}
-              {isLoading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
-                    <SkeletonCard key={i} />
-                  ))}
-                </div>
-              ) : filteredDoctors.length === 0 ? (
-                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 text-center text-xs text-slate-400 font-bold border border-slate-100 dark:border-slate-800">
-                  لا يوجد أطباء مطابقين للبحث أو التخصص المحدد
-                </div>
               ) : (
-                <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden">
-                  {filteredDoctors.map((d, i) => (
-                    <DoctorCard
-                      key={d.id}
-                      doctor={d}
-                      onClick={() => setSelectedDoctor(d)}
-                      index={i}
+                <div className="space-y-3">
+                  {filteredCouncilMembers.map((member) => (
+                    <CouncilMemberCard
+                      key={member.id}
+                      member={member}
+                      activitiesCount={councilActivities.filter((a) => a.memberId === member.id).length}
+                      onSelect={(m) => setSelectedCouncilMember(m)}
                     />
                   ))}
                 </div>
@@ -4428,6 +4729,45 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Standalone Council Member Profile Modal */}
+      <AnimatePresence>
+        {selectedCouncilMember && (
+          <CouncilMemberProfileModal
+            member={selectedCouncilMember}
+            activities={councilActivities}
+            onClose={() => setSelectedCouncilMember(null)}
+            onOpenImage={(img) => setSelectedActivityImage(img)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Lightbox / Zoom Image Modal */}
+      <AnimatePresence>
+        {selectedActivityImage && (
+          <div
+            className="fixed inset-0 z-[750] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+            onClick={() => setSelectedActivityImage(null)}
+          >
+            <button
+              onClick={() => setSelectedActivityImage(null)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all z-10 cursor-pointer"
+              title="إغلاق"
+            >
+              <X size={22} />
+            </button>
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              src={selectedActivityImage}
+              alt="صورة النشاط"
+              className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
+      </AnimatePresence>
+
 
       <div className="max-w-lg mx-auto pb-6">
         {tab === "home" && renderHome()}
@@ -4581,6 +4921,65 @@ export default function App() {
                     </span>
                     <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
                       {selectedTaxi.notes}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </DetailPage>
+        )}
+
+        {selectedRestaurant && (
+          <DetailPage
+            title={selectedRestaurant.name}
+            subtitle={selectedRestaurant.category || "مطعم ومأكولات"}
+            icon={<Utensils size={56} className="text-emerald-500" />}
+            onBack={() => setSelectedRestaurant(null)}
+            image={selectedRestaurant.logoImage || selectedRestaurant.coverImage}
+            isVerified={true}
+          >
+            <div className="space-y-3.5 font-sans" dir="rtl">
+              {/* 1. التصنيف */}
+              {selectedRestaurant.category && (
+                <DetailRow
+                  icon={<Utensils className="text-emerald-500" />}
+                  label="التصنيف والوجبات"
+                  value={selectedRestaurant.category}
+                />
+              )}
+
+              {/* 2. رقم الهاتف */}
+              {selectedRestaurant.phone && (
+                <DetailRow
+                  icon={<Phone className="text-emerald-500" />}
+                  label="رقم الهاتف والطلب"
+                  value={selectedRestaurant.phone}
+                  actionIcon={<Phone size={14} />}
+                  onAction={() => window.open(`tel:${selectedRestaurant.phone}`)}
+                />
+              )}
+
+              {/* 3. الموقع */}
+              {selectedRestaurant.location && (
+                <DetailRow
+                  icon={<MapPin className="text-emerald-500" />}
+                  label="الموقع والعنوان"
+                  value={selectedRestaurant.location}
+                />
+              )}
+
+              {/* 4. التفاصيل */}
+              {selectedRestaurant.description && (
+                <div className="flex items-start gap-3.5 p-4 bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 rounded-2xl text-right">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <FileText size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0 text-right">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block mb-1 uppercase tracking-wider">
+                      عن المطعم وقائمة الطعام
+                    </span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                      {selectedRestaurant.description}
                     </span>
                   </div>
                 </div>
@@ -4928,6 +5327,10 @@ export default function App() {
                 setServiceCategoriesList={setServiceCategoriesList}
                 districts={districts}
                 setDistricts={setDistricts}
+                councilMembers={councilMembers}
+                setCouncilMembers={setCouncilMembers}
+                councilActivities={councilActivities}
+                setCouncilActivities={setCouncilActivities}
               />
             </Suspense>
           </OverlayPage>

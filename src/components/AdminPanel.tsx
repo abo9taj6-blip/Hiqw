@@ -22,6 +22,12 @@ import {
   Phone,
   MapPin,
   Landmark,
+  Utensils,
+  Car,
+  Users,
+  Activity,
+  Building2,
+  CheckCircle2,
 } from "lucide-react";
 import {
   Doctor,
@@ -31,6 +37,8 @@ import {
   DoctorRegion,
   ServiceCategory,
   District,
+  CouncilMember,
+  CouncilActivity,
 } from "../types";
 import { excelService } from "../services/excelService";
 import { firebaseService } from "../services/firebaseService";
@@ -40,6 +48,8 @@ import { DistrictAdminManager } from "./DistrictAdminManager";
 interface AdminPanelProps {
   adminView:
     | "main"
+    | "council_members"
+    | "council_activities"
     | "doctors"
     | "districts"
     | "banners"
@@ -54,6 +64,8 @@ interface AdminPanelProps {
   setAdminView: (
     view:
       | "main"
+      | "council_members"
+      | "council_activities"
       | "doctors"
       | "districts"
       | "banners"
@@ -104,6 +116,10 @@ interface AdminPanelProps {
   setDoctorRegionsList?: React.Dispatch<React.SetStateAction<DoctorRegion[]>>;
   serviceCategoriesList?: ServiceCategory[];
   setServiceCategoriesList?: React.Dispatch<React.SetStateAction<ServiceCategory[]>>;
+  councilMembers?: CouncilMember[];
+  setCouncilMembers?: React.Dispatch<React.SetStateAction<CouncilMember[]>>;
+  councilActivities?: CouncilActivity[];
+  setCouncilActivities?: React.Dispatch<React.SetStateAction<CouncilActivity[]>>;
   // Optional compatibility props
   marketStores?: any[];
   setMarketStores?: any;
@@ -137,6 +153,10 @@ export const AdminPanel = (props: AdminPanelProps) => {
     banners = [],
     districts = [],
     setDistricts,
+    councilMembers = [],
+    councilActivities = [],
+    marketStores = [],
+    setMarketStores,
     medicalComplexes = [],
     adminSelectedStore,
     setAdminSelectedStore,
@@ -602,6 +622,24 @@ export const AdminPanel = (props: AdminPanelProps) => {
   // Main Admin Grid Sections Configuration
   const navSections = [
     {
+      id: "council_members",
+      label: "أعضاء مجلس المحافظة",
+      subtitle: "إدارة أسماء ومناصب ولجان وأرقام هواتف أعضاء المجلس وإحصائيات الطلبات المنجزة",
+      icon: <Users size={28} />,
+      badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300",
+      accentBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+      count: councilMembers?.length || 0,
+    },
+    {
+      id: "council_activities",
+      label: "أحدث النشاطات والأحداث",
+      subtitle: "إضافة وتوثيق الجولات والاجتماعات مع ما يصل إلى 4 صور لكل نشاط وربطها بالأعضاء",
+      icon: <Activity size={28} />,
+      badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-300",
+      accentBg: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+      count: councilActivities?.length || 0,
+    },
+    {
       id: "doctors",
       label: "إدارة الأطباء والعيادات",
       subtitle: "إضافة وتعديل الأطباء، التخصصات والمناطق، واستيراد وتصدير Excel",
@@ -618,6 +656,24 @@ export const AdminPanel = (props: AdminPanelProps) => {
       badgeColor: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border-teal-300",
       accentBg: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
       count: districts?.length || 0,
+    },
+    {
+      id: "market_stores",
+      label: "إدارة المطاعم والمتاجر",
+      subtitle: "إضافة وتعديل المطاعم، المأكولات، والتصنيفات في المحافظة",
+      icon: <Utensils size={28} />,
+      badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300",
+      accentBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+      count: marketStores?.length || 0,
+    },
+    {
+      id: "taxis",
+      label: "إدارة سيارات الأجرة والتكسي",
+      subtitle: "إدارة سائقي التكسي، خطوط النقل، وخدمات التوصيل",
+      icon: <Car size={28} />,
+      badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300",
+      accentBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+      count: taxis?.length || 0,
     },
     {
       id: "banners",
@@ -1235,6 +1291,243 @@ export const AdminPanel = (props: AdminPanelProps) => {
                         }
                       />
                     )}
+
+                    {/* Council Member Specific Fields */}
+                    {adminView === "council_members" && (
+                      <>
+                        <AdminInput
+                          placeholder="المنصب والصفة الرسمية (مثال: رئيس مجلس محافظة صلاح الدين)"
+                          value={formData.title || ""}
+                          onChange={(v) => setFormData({ ...formData, title: v })}
+                        />
+
+                        <AdminInput
+                          placeholder="اللجنة المسندة (مثال: لجنة الخدمات والإعمار)"
+                          value={formData.committee || ""}
+                          onChange={(v) => setFormData({ ...formData, committee: v })}
+                        />
+
+                        <div className="space-y-1.5 text-right">
+                          <label className="text-xs font-black text-slate-700 dark:text-slate-200">
+                            دائرة التمثيل / القضاء:
+                          </label>
+                          <select
+                            value={formData.electoralDistrict || "قضاء تكريت"}
+                            onChange={(e) => setFormData({ ...formData, electoralDistrict: e.target.value })}
+                            className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none cursor-pointer text-right"
+                          >
+                            <option value="قضاء تكريت">قضاء تكريت</option>
+                            <option value="قضاء سامراء">قضاء سامراء</option>
+                            <option value="قضاء الشرقاط">قضاء الشرقاط</option>
+                            <option value="قضاء بيجي">قضاء بيجي</option>
+                            <option value="قضاء بلد">قضاء بلد</option>
+                            <option value="قضاء طوزخورماتو">قضاء طوزخورماتو</option>
+                            <option value="قضاء الدجيل">قضاء الدجيل</option>
+                            <option value="قضاء الدور">قضاء الدور</option>
+                            <option value="قضاء آمرلي">قضاء آمرلي</option>
+                            <option value="قضاء الضلوعية">قضاء الضلوعية</option>
+                          </select>
+                        </div>
+
+                        <AdminInput
+                          type="number"
+                          placeholder="عدد الطلبات والكتب المنجزة للمواطنين"
+                          value={formData.completedRequestsCount !== undefined ? String(formData.completedRequestsCount) : "0"}
+                          onChange={(v) => setFormData({ ...formData, completedRequestsCount: parseInt(v) || 0 })}
+                        />
+
+                        <AdminInput
+                          type="number"
+                          placeholder="الطلبات قيد المتابعة"
+                          value={formData.activeRequestsCount !== undefined ? String(formData.activeRequestsCount) : "0"}
+                          onChange={(v) => setFormData({ ...formData, activeRequestsCount: parseInt(v) || 0 })}
+                        />
+
+                        <AdminInput
+                          placeholder="مقر ومكتب استقبال المواطنين"
+                          value={formData.officeLocation || ""}
+                          onChange={(v) => setFormData({ ...formData, officeLocation: v })}
+                        />
+
+                        <AdminInput
+                          placeholder="رقم الواتساب لاستقبال الطلبات"
+                          value={formData.whatsapp || ""}
+                          onChange={(v) => setFormData({ ...formData, whatsapp: v })}
+                        />
+
+                        <AdminInput
+                          placeholder="رابط الصفحة الرسمية أو فيسبوك"
+                          value={formData.facebook || ""}
+                          onChange={(v) => setFormData({ ...formData, facebook: v })}
+                        />
+                      </>
+                    )}
+
+                    {/* Council Activities Specific Fields */}
+                    {adminView === "council_activities" && (
+                      <>
+                        <div className="space-y-1.5 text-right">
+                          <label className="text-xs font-black text-slate-700 dark:text-slate-200">
+                            عضو المجلس المرتبط بالنشاط:
+                          </label>
+                          <select
+                            value={formData.memberId || ""}
+                            onChange={(e) => {
+                              const chosen = councilMembers.find((m) => m.id === e.target.value);
+                              if (chosen) {
+                                setFormData({
+                                  ...formData,
+                                  memberId: chosen.id,
+                                  memberName: chosen.name,
+                                  memberRole: chosen.title,
+                                  memberPhoto: chosen.photo,
+                                });
+                              } else {
+                                setFormData({ ...formData, memberId: e.target.value });
+                              }
+                            }}
+                            className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none cursor-pointer text-right"
+                          >
+                            <option value="">-- اختر عضو المجلس --</option>
+                            {councilMembers.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name} - ({m.title})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-1.5 text-right">
+                          <label className="text-xs font-black text-slate-700 dark:text-slate-200">
+                            نوع وتصنيف النشاط:
+                          </label>
+                          <select
+                            value={formData.category || "جلسة رسمية"}
+                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                            className="w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none cursor-pointer text-right"
+                          >
+                            <option value="جلسة رسمية">جلسة رسمية للمجلس</option>
+                            <option value="جولة ميدانية">جولة ميدانية تفقدية</option>
+                            <option value="استقبال مواطنين">استقبال وفود المواطنين</option>
+                            <option value="اجتماع رسمي">اجتماع رسمي للجان</option>
+                            <option value="متابعة مشاريع">متابعة مشاريع خدمية وإعمار</option>
+                            <option value="زيارة تفقدية">زيارة تفقدية لمؤسسات المحافظة</option>
+                          </select>
+                        </div>
+
+                        <AdminInput
+                          placeholder="تاريخ وتوقيت الفعالية (مثال: اليوم - الساعة 11:00 صباحاً)"
+                          value={formData.date || ""}
+                          onChange={(v) => setFormData({ ...formData, date: v })}
+                        />
+
+                        <AdminInput
+                          placeholder="مكان النشاط (مثال: قاعة المجلس بتكريت / الشارع العام بالشرقاط)"
+                          value={formData.location || ""}
+                          onChange={(v) => setFormData({ ...formData, location: v })}
+                        />
+
+                        {/* 4 Photos Gallery Manager for Activities */}
+                        <div className="sm:col-span-2 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border-2 border-slate-200/80 dark:border-slate-800 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5">
+                              <ImageIcon size={16} className="text-emerald-600" />
+                              <span>صور النشاط والتوثيق (حتى 4 صور بحد أقصى):</span>
+                            </label>
+                            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                              {(formData.images?.length || 0)} من 4 صور مضافة
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {[0, 1, 2, 3].map((slotIdx) => {
+                              const currentImg = formData.images?.[slotIdx];
+                              return (
+                                <div key={slotIdx} className="space-y-1.5 text-center">
+                                  <div className="w-full h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden relative flex items-center justify-center group">
+                                    {currentImg ? (
+                                      <>
+                                        <img src={currentImg} alt="" className="w-full h-full object-cover" />
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newImages = [...(formData.images || [])];
+                                            newImages.splice(slotIdx, 1);
+                                            setFormData({ ...formData, images: newImages });
+                                          }}
+                                          className="absolute top-1 left-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-md active:scale-90"
+                                          title="حذف الصورة"
+                                        >
+                                          <X size={13} />
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center text-slate-400 hover:text-emerald-600 transition-colors">
+                                        <Plus size={20} />
+                                        <span className="text-[10px] font-bold mt-1">صورة {slotIdx + 1}</span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="hidden"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              const reader = new FileReader();
+                                              reader.onloadend = () => {
+                                                const img = new Image();
+                                                img.onload = () => {
+                                                  const canvas = document.createElement("canvas");
+                                                  let width = img.width;
+                                                  let height = img.height;
+                                                  const maxDim = 800;
+                                                  if (width > height && width > maxDim) {
+                                                    height *= maxDim / width;
+                                                    width = maxDim;
+                                                  } else if (height > maxDim) {
+                                                    width *= maxDim / height;
+                                                    height = maxDim;
+                                                  }
+                                                  canvas.width = width;
+                                                  canvas.height = height;
+                                                  const ctx = canvas.getContext("2d");
+                                                  ctx?.drawImage(img, 0, 0, width, height);
+                                                  const b64 = canvas.toDataURL("image/jpeg", 0.7);
+                                                  const newImgs = [...(formData.images || [])];
+                                                  newImgs[slotIdx] = b64;
+                                                  setFormData({ ...formData, images: newImgs.filter(Boolean).slice(0, 4) });
+                                                };
+                                                img.src = reader.result as string;
+                                              };
+                                              reader.readAsDataURL(file);
+                                            }
+                                          }}
+                                        />
+                                      </label>
+                                    )}
+                                  </div>
+                                  <input
+                                    type="text"
+                                    placeholder={`رابط صورة ${slotIdx + 1}`}
+                                    value={currentImg || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const newImgs = [...(formData.images || [])];
+                                      if (val.trim()) {
+                                        newImgs[slotIdx] = val.trim();
+                                      } else {
+                                        newImgs.splice(slotIdx, 1);
+                                      }
+                                      setFormData({ ...formData, images: newImgs.filter(Boolean).slice(0, 4) });
+                                    }}
+                                    className="w-full text-[10px] p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center font-mono"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Description / Message Area */}
@@ -1516,8 +1809,11 @@ export const AdminPanel = (props: AdminPanelProps) => {
               <div className="space-y-3">
                 {(() => {
                   let items: any[] = [];
-                  if (adminView === "doctors") items = doctors;
+                  if (adminView === "council_members") items = councilMembers || [];
+                  else if (adminView === "council_activities") items = councilActivities || [];
+                  else if (adminView === "doctors") items = doctors;
                   else if (adminView === "medical_complexes") items = medicalComplexes;
+                  else if (adminView === "market_stores") items = marketStores || [];
                   else if (adminView === "market_products") items = adminMarketProducts;
                   else if (adminView === "banners") items = banners;
                   else if (adminView === "taxis") items = taxis;
@@ -1529,6 +1825,9 @@ export const AdminPanel = (props: AdminPanelProps) => {
                     return (
                       (item.name && item.name.toLowerCase().includes(q)) ||
                       (item.title && item.title.toLowerCase().includes(q)) ||
+                      (item.committee && item.committee.toLowerCase().includes(q)) ||
+                      (item.electoralDistrict && item.electoralDistrict.toLowerCase().includes(q)) ||
+                      (item.memberName && item.memberName.toLowerCase().includes(q)) ||
                       (item.subtitle && item.subtitle.toLowerCase().includes(q)) ||
                       (item.specialty && item.specialty.toLowerCase().includes(q)) ||
                       (item.phone1 && item.phone1.includes(q)) ||
@@ -1566,12 +1865,18 @@ export const AdminPanel = (props: AdminPanelProps) => {
                         >
                           <div className="flex items-center gap-3.5 min-w-0 flex-1">
                             <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
-                              {item.image || (item.images && item.images[0]) || item.logoImage ? (
+                              {item.image || (item.images && item.images[0]) || item.photo || item.logoImage ? (
                                 <img
-                                  src={item.image || (item.images && item.images[0]) || item.logoImage}
+                                  src={item.image || (item.images && item.images[0]) || item.photo || item.logoImage}
                                   className="w-full h-full object-cover"
                                   alt=""
                                 />
+                              ) : adminView === "council_members" ? (
+                                <Users className="text-emerald-600" size={24} />
+                              ) : adminView === "council_activities" ? (
+                                <Activity className="text-blue-600" size={24} />
+                              ) : adminView === "market_stores" ? (
+                                <Utensils className="text-emerald-600" size={24} />
                               ) : adminView === "medical_complexes" ? (
                                 <Hospital className="text-emerald-600" size={24} />
                               ) : adminView === "doctors" ? (
@@ -1579,7 +1884,7 @@ export const AdminPanel = (props: AdminPanelProps) => {
                               ) : adminView === "notifications" ? (
                                 <Bell className="text-rose-600" size={24} />
                               ) : adminView === "taxis" ? (
-                                <Wrench className="text-amber-600" size={24} />
+                                <Car className="text-amber-600" size={24} />
                               ) : (
                                 <ImageIcon className="text-slate-400" size={24} />
                               )}
@@ -1590,9 +1895,33 @@ export const AdminPanel = (props: AdminPanelProps) => {
                                 <h4 className="font-display font-black text-sm sm:text-base text-slate-900 dark:text-white truncate">
                                   {item.name || item.title}
                                 </h4>
-                                {item.category && (
+                                {adminView === "council_members" && item.title && (
+                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                                    {item.title}
+                                  </span>
+                                )}
+                                {adminView === "council_activities" && (
+                                  <>
+                                    {item.category && (
+                                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
+                                        {item.category}
+                                      </span>
+                                    )}
+                                    {item.images && item.images.length > 0 && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                        📷 {item.images.length} صور
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                                {adminView !== "council_activities" && item.category && (
                                   <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                                     {item.category}
+                                  </span>
+                                )}
+                                {adminView === "council_members" && item.completedRequestsCount !== undefined && (
+                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300">
+                                    ✓ {item.completedRequestsCount} طلب منجز
                                   </span>
                                 )}
                                 {adminView === "banners" && (
@@ -1606,9 +1935,11 @@ export const AdminPanel = (props: AdminPanelProps) => {
                                 )}
                               </div>
 
-                              {(item.subtitle || item.specialty || item.carType) && (
+                              {(item.subtitle || item.specialty || item.carType || (adminView === "council_members" && item.committee) || (adminView === "council_activities" && item.memberName)) && (
                                 <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
-                                  {item.subtitle || item.specialty || item.carType}
+                                  {adminView === "council_activities" && item.memberName
+                                    ? `👤 بواسطة: ${item.memberName} (${item.memberRole || "عضو المجلس"})`
+                                    : item.subtitle || item.specialty || item.carType || item.committee}
                                 </p>
                               )}
 
@@ -1619,6 +1950,16 @@ export const AdminPanel = (props: AdminPanelProps) => {
                               )}
 
                               <div className="flex items-center gap-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1 flex-wrap">
+                                {adminView === "council_members" && item.electoralDistrict && (
+                                  <span className="text-slate-600 dark:text-slate-300">
+                                    🏛️ {item.electoralDistrict}
+                                  </span>
+                                )}
+                                {adminView === "council_activities" && item.date && (
+                                  <span className="text-blue-600 dark:text-blue-400">
+                                    📅 {item.date}
+                                  </span>
+                                )}
                                 {(item.phone1 || item.phone) && (
                                   <span className="flex items-center gap-1">
                                     <Phone size={12} />

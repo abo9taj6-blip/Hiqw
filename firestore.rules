@@ -40,6 +40,18 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Salah Al-Din Provincial Council
+    match /council_members/{memberId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /council_activities/{activityId} {
+      allow read: if true;
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount', 'updatedAt'])) || isAdmin();
+      allow write: if isAdmin();
+    }
+
     // Main directory collections
     match /doctors/{doctorId} {
       allow read: if true;

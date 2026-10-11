@@ -255,3 +255,40 @@ export interface District {
   createdAt?: any;
   updatedAt?: any;
 }
+
+export interface CouncilMember {
+  id: string;
+  name: string;
+  title: string;
+  committee?: string;
+  electoralDistrict?: string;
+  bio?: string;
+  photo?: string;
+  completedRequestsCount: number;
+  activeRequestsCount?: number;
+  officeLocation?: string;
+  phone?: string;
+  whatsapp?: string;
+  facebook?: string;
+  order?: number;
+  isActive: boolean;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
+export interface CouncilActivity {
+  id: string;
+  title: string;
+  description: string;
+  memberId: string;
+  memberName?: string;
+  memberRole?: string;
+  memberPhoto?: string;
+  images: string[]; // Up to 4 photos
+  date: string;
+  location?: string;
+  category?: string;
+  likesCount?: number;
+  createdAt?: number;
+  updatedAt?: number;
+}
